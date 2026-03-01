@@ -72,7 +72,6 @@ model: AutoModelForCausalLM | None = None
 tokenizer: AutoTokenizer | None = None
 sae: TopKSAE | None = None
 feature_labels: dict[str, str] = {}
-decoder_directions: dict[int, torch.Tensor] = {}  # feature_idx → (4096,) on device
 
 
 @asynccontextmanager
@@ -107,11 +106,6 @@ async def lifespan(app: FastAPI):
     sae.eval()
     print(f"SAE loaded: {cfg['d_sae']} features, k={cfg['k']}")
 
-    # Pre-cache all decoder directions on device
-    with torch.no_grad():
-        for i in range(cfg["d_sae"]):
-            decoder_directions[i] = sae.W_dec[i].clone().to(device)
-
     # --- Load feature labels ---
     print(f"Loading feature candidates from {FEATURE_CANDIDATES}...")
     with open(FEATURE_CANDIDATES) as f:
@@ -132,7 +126,6 @@ async def lifespan(app: FastAPI):
     yield
 
     del model, tokenizer, sae
-    decoder_directions.clear()
     torch.cuda.empty_cache()
 
 
@@ -193,8 +186,9 @@ def generate(req: GenerateRequest):
 
     # Compute combined steering direction (sum of all active feature directions)
     combined_direction = torch.zeros(sae.W_dec.shape[1], device=device, dtype=torch.float16)
-    for feat_id, strength in active:
-        combined_direction += strength * decoder_directions[feat_id].to(torch.float16)
+    with torch.no_grad():
+        for feat_id, strength in active:
+            combined_direction += strength * sae.W_dec[feat_id].to(device=device, dtype=torch.float16)
 
     # Attach decode-only steering hook at the configured layer
     hook_fn = make_steering_hook(combined_direction, alpha=1.0)  # strength already in direction
