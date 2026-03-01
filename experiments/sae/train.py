@@ -477,7 +477,7 @@ def main() -> None:
     parser.add_argument("--device", type=str, default="cuda")
     args = parser.parse_args()
 
-    config.set_model(args.model)
+    config.apply_args(args)
 
     generations_dir = args.generations_dir or config.GENERATIONS_DIR
     output_dir = args.output_dir or config.SAE_DIR / f"layer_{args.layer}"

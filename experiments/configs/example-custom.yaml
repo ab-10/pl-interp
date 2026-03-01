@@ -1,0 +1,26 @@
+# Example: custom model config with tuned SAE parameters
+# Usage: python -m experiments.scripts.01_generate --config configs/example-custom.yaml
+#
+# You can also combine with --model to start from a preset and override:
+#   python -m experiments.scripts.01_generate --model mistral-7b --config configs/override.yaml
+
+model:
+  name: codellama-7b                          # new name (gets registered automatically)
+  model_id: codellama/CodeLlama-7b-Instruct-hf
+  num_layers: 32
+  hidden_dim: 4096
+  dtype: float16
+
+generation:
+  temperature: 0.8
+  max_new_tokens: 1024
+  num_runs: 3
+  base_seed: 100
+
+sae:
+  num_features: 8192    # smaller dictionary, fewer dead features
+  k: 32                 # lower sparsity
+  training_tokens: 5000000
+
+steering:
+  alphas: [0.5, 1.0, 1.5, 3.0, -1.5]

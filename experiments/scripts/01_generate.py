@@ -70,7 +70,7 @@ def main() -> int:
     parser.add_argument("--num-shards", type=int, default=2, help="Total number of GPU shards")
     args = parser.parse_args()
 
-    config.set_model(args.model)
+    config.apply_args(args)
 
     config.GENERATIONS_DIR.mkdir(parents=True, exist_ok=True)
     output_path = config.GENERATIONS_DIR / f"shard_{args.shard}.jsonl"

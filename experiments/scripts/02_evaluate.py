@@ -41,7 +41,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    config.set_model(args.model)
+    config.apply_args(args)
     input_dir = args.input_dir or config.GENERATIONS_DIR
 
     # --- W&B ---

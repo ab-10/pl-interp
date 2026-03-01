@@ -1,0 +1,31 @@
+model:
+  name: mistral-7b
+  model_id: mistralai/Mistral-7B-Instruct-v0.3
+  num_layers: 32
+  hidden_dim: 4096
+  dtype: float16
+
+generation:
+  temperature: 0.7
+  top_p: 0.95
+  max_new_tokens: 512
+  num_runs: 5
+  base_seed: 42
+  num_gpus: 2
+
+extraction:
+  timeout: 3
+  greedy_retry_temp: 0.0
+
+sae:
+  num_features: 16384
+  k: 64
+  training_tokens: 10000000
+
+steering:
+  num_features: 3
+  alphas: [1.0, 3.0, 5.0, -3.0]
+  tasks: 164
+
+wandb:
+  project: pl-interp

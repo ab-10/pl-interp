@@ -610,7 +610,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    config.set_model(args.model)
+    config.apply_args(args)
     print(f"Model: {config.MODEL_NAME} ({config.MODEL_ID})")
     print(f"  Layers: {config.MODEL_NUM_LAYERS}, Capture layer: {config.CAPTURE_LAYER}, "
           f"Hidden dim: {config.MODEL_HIDDEN_DIM}\n")

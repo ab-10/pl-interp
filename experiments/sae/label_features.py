@@ -440,7 +440,7 @@ def main() -> int:
         help="Print prompts without calling Bedrock.",
     )
     args = parser.parse_args()
-    config.set_model(args.model)
+    config.apply_args(args)
 
     layer = args.layer or config.CAPTURE_LAYER
     generations_dir = args.generations_dir or config.GENERATIONS_DIR

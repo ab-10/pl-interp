@@ -54,7 +54,7 @@ def main() -> int:
     config.add_model_arg(parser)
     args = parser.parse_args()
 
-    config.set_model(args.model)
+    config.apply_args(args)
 
     if not torch.cuda.is_available():
         print("FAIL: CUDA not available.")
