@@ -40,9 +40,9 @@ export default function Home() {
     setError(null);
 
     const merged = { ...strengths, ...customStrengths };
-    const overrides: FeatureOverride[] = Object.entries(merged).map(
-      ([id, strength]) => ({ id: Number(id), strength })
-    );
+    const overrides: FeatureOverride[] = Object.entries(merged)
+      .filter(([, strength]) => strength !== 0)
+      .map(([id, strength]) => ({ id: Number(id), strength }));
 
     try {
       const result = await generateCompletion(prompt, overrides, temperature);

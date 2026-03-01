@@ -11,6 +11,7 @@ export interface FeatureOverride {
 export interface GenerateRequest {
   prompt: string;
   features: FeatureOverride[];
+  temperature?: number;
 }
 
 export interface GenerateResponse {

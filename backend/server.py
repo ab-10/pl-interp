@@ -32,6 +32,7 @@ class FeatureOverride(BaseModel):
 class GenerateRequest(BaseModel):
     prompt: str
     features: list[FeatureOverride] = []
+    temperature: float = 0.3
 
 
 # Global model references set during startup
@@ -45,7 +46,7 @@ async def lifespan(app: FastAPI):
     global model, sae, hook_point
 
     print("Loading model...")
-    model = HookedTransformer.from_pretrained_no_processing(MODEL_NAME, device="cuda")
+    model = HookedTransformer.from_pretrained_no_processing(MODEL_NAME, device="cuda", dtype=torch.float16)
     print(f"Model loaded. VRAM: {torch.cuda.memory_allocated() / 1e9:.1f} GB")
 
     print("Loading SAE...")
@@ -81,11 +82,15 @@ def get_features():
 def generate(req: GenerateRequest):
     assert model is not None and sae is not None and hook_point is not None
 
+    temp = req.temperature
+    do_sample = temp > 0
+
     # Baseline generation (no hooks) — generate() returns a string by default
     baseline_text = model.generate(
         req.prompt,
         max_new_tokens=MAX_NEW_TOKENS,
-        temperature=0,
+        temperature=temp,
+        do_sample=do_sample,
     )
 
     # Steered generation (with steering hook)
@@ -94,16 +99,26 @@ def generate(req: GenerateRequest):
     if not active:
         return {"baseline": baseline_text, "steered": baseline_text}
 
+    # Validate feature IDs and pre-compute detached steering vectors
+    steering_vectors = []
+    for feat_id, strength in active:
+        if not (0 <= feat_id < sae.cfg.d_sae):
+            raise ValueError(f"Feature ID {feat_id} out of range [0, {sae.cfg.d_sae})")
+        steering_vectors.append((strength, sae.W_dec[feat_id].detach().clone()))
+
     def steering_hook(value, hook):
-        for feat_id, strength in active:
-            value = value + strength * sae.W_dec[feat_id]
+        if value.shape[1] == 1:
+            return value
+        for strength, vec in steering_vectors:
+            value[:, :, :] = value + strength * vec.to(value.device, value.dtype)
         return value
 
     with model.hooks(fwd_hooks=[(hook_point, steering_hook)]):
         steered_text = model.generate(
             req.prompt,
             max_new_tokens=MAX_NEW_TOKENS,
-            temperature=0,
+            temperature=temp,
+            do_sample=do_sample,
         )
 
     return {"baseline": baseline_text, "steered": steered_text}

@@ -16,13 +16,14 @@ export async function fetchFeatures(): Promise<Feature[]> {
 
 export async function generateCompletion(
   prompt: string,
-  features: FeatureOverride[]
+  features: FeatureOverride[],
+  temperature: number = 0.3
 ): Promise<GenerateResponse> {
   const activeFeatures = features.filter((f) => f.strength !== 0);
   const res = await fetch(`${API_BASE}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, features: activeFeatures }),
+    body: JSON.stringify({ prompt, features: activeFeatures, temperature }),
   });
   if (!res.ok) {
     throw new Error(`Generation failed: ${res.statusText}`);

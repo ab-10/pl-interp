@@ -17,14 +17,14 @@ export default function CustomFeatureInput({
   onChange,
 }: CustomFeatureInputProps) {
   const [featureIndex, setFeatureIndex] = useState("");
-  const [strength, setStrength] = useState(1);
+  const [strength, setStrength] = useState(100);
 
   const handleAdd = () => {
     const idx = parseInt(featureIndex, 10);
     if (isNaN(idx) || idx < 0 || idx > 131071) return;
     onAdd(idx, strength);
     setFeatureIndex("");
-    setStrength(1);
+    setStrength(100);
   };
 
   const entries = Object.entries(customStrengths).map(([id, s]) => ({
@@ -60,9 +60,9 @@ export default function CustomFeatureInput({
           </label>
           <input
             type="number"
-            min={-10}
-            max={10}
-            step={0.5}
+            min={-500}
+            max={500}
+            step={10}
             value={strength}
             onChange={(e) => setStrength(parseFloat(e.target.value))}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
