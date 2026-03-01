@@ -150,13 +150,17 @@ def train_probe(
     logger.info("Pass: %d, Fail: %d (%.1f%% pass rate)", n_pass, n_fail, 100 * n_pass / len(y))
 
     # Train logistic regression with cross-validated regularization
-    logger.info("Training logistic regression probe (5-fold CV)...")
+    # Use saga solver (efficient for large n and large d) with float32
+    X = X.astype(np.float32)
+    logger.info("Training logistic regression probe (3-fold CV, saga solver)...")
     probe = LogisticRegressionCV(
-        Cs=10,
-        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
+        Cs=5,
+        cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42),
         penalty="l2",
+        solver="saga",
         scoring="accuracy",
-        max_iter=1000,
+        max_iter=500,
+        n_jobs=4,
         random_state=42,
     )
     probe.fit(X, y)
