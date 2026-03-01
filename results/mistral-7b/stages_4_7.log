@@ -1,0 +1,66 @@
+Waiting for PID 39488 (run_pipeline.sh) to finish...
+PID 39488 exited at Sun Mar  1 09:28:18 UTC 2026. Starting stages 4-7...
+Already up to date.
+Sun Mar  1 09:28:19 UTC 2026: Starting stages 4-7
+Generations: 2 shards
+
+Sun Mar  1 09:28:19 UTC 2026: === Stage 4: Train SAE ===
+Loading generation records from /scratch/generations
+  11952 records loaded
+  pass=2346, fail=9606
+Training TopKSAE: d_model=4096, d_sae=32768, k=64
+  tokens=2000000, batch_size=4096, steps~=488
+  lr=0.0003, warmup=24, device=cuda
+  pass_pool=225913 tokens, fail_pool=1357988 tokens
+  step 0/488  loss=0.0066  mse=0.0066  aux=0.0000  dead=0  var_expl=-0.007  lr=1.25e-05
+  step 250/488  loss=0.0024  mse=0.0024  aux=0.0000  dead=0  var_expl=0.627  lr=1.55e-04
+Saved checkpoint to /scratch/sae/sae_checkpoint.pt  (final step: 489)
+
+Training complete. Checkpoint: /scratch/sae/sae_checkpoint.pt
+Sun Mar  1 09:30:11 UTC 2026: Stage 4 complete
+
+Sun Mar  1 09:30:11 UTC 2026: === Stage 5a: Analyze SAE features ===
+2026-03-01 09:30:12,352 INFO Loading SAE from /scratch/sae/sae_checkpoint.pt
+2026-03-01 09:30:14,128 INFO Loading generation records from /scratch/generations
+2026-03-01 09:30:14,466 INFO Loaded 11952 records
+2026-03-01 09:30:14,622 INFO Processing record 0 / 11952
+2026-03-01 09:30:34,147 INFO Processing record 1000 / 11952
+2026-03-01 09:30:54,075 INFO Processing record 2000 / 11952
+2026-03-01 09:31:13,461 INFO Processing record 3000 / 11952
+2026-03-01 09:31:33,583 INFO Processing record 4000 / 11952
+2026-03-01 09:31:52,916 INFO Processing record 5000 / 11952
+2026-03-01 09:32:13,159 INFO Processing record 6000 / 11952
+2026-03-01 09:32:33,345 INFO Processing record 7000 / 11952
+2026-03-01 09:32:52,028 INFO Processing record 8000 / 11952
+2026-03-01 09:33:11,988 INFO Processing record 9000 / 11952
+2026-03-01 09:33:30,629 INFO Processing record 10000 / 11952
+2026-03-01 09:33:49,988 INFO Processing record 11000 / 11952
+2026-03-01 09:34:08,482 INFO Computing final statistics for 32768 features
+2026-03-01 09:34:09,321 INFO Wrote /scratch/analysis/feature_stats.json — 32768 features, 30384 dead, 1082 with positive Cohen's d
+Sun Mar  1 09:34:10 UTC 2026: Stage 5a complete
+
+Sun Mar  1 09:34:10 UTC 2026: === Stage 5b: Select steering candidates ===
+2026-03-01 09:34:12,329 INFO Loading feature statistics from /scratch/analysis/feature_stats.json
+2026-03-01 09:34:12,499 INFO Alive features: 2384 / 32768
+2026-03-01 09:34:12,501 INFO Selected candidates: [(3155, 355.674, 'decomposition'), (12311, -324.1719, 'typed'), (27052, 78.0634, 'error_handling')]
+2026-03-01 09:34:12,501 INFO Random control features: [16691, 26758, 17617]
+2026-03-01 09:34:12,501 INFO Loading SAE for direction extraction from /scratch/sae/sae_checkpoint.pt
+2026-03-01 09:34:13,495 INFO Wrote /scratch/analysis/feature_candidates.json
+2026-03-01 09:34:13,497 INFO Wrote /scratch/analysis/steering_directions.pt
+Sun Mar  1 09:34:13 UTC 2026: Stage 5b complete
+
+Sun Mar  1 09:34:13 UTC 2026: === Stage 5c: Compute contrastive directions ===
+2026-03-01 09:34:17,816 INFO Loading generation records from /scratch/generations
+2026-03-01 09:34:17,816 INFO Loaded 0 records
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/azureuser/pl-interp/experiments/contrastive/compute_directions.py", line 204, in <module>
+    main()
+  File "/home/azureuser/pl-interp/experiments/contrastive/compute_directions.py", line 195, in main
+    compute_contrastive_directions(
+  File "/home/azureuser/pl-interp/experiments/contrastive/compute_directions.py", line 121, in compute_contrastive_directions
+    raise ValueError("No baseline records found in generation data")
+ValueError: No baseline records found in generation data

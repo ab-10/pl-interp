@@ -1,0 +1,166 @@
+{
+  "candidates": [
+    {
+      "feature_idx": 3155,
+      "cohens_d": 355.673979,
+      "primary_variant": "decomposition",
+      "variant_means": {
+        "baseline": 0.0,
+        "control_flow": 0.0,
+        "decomposition": 1e-06,
+        "error_handling": 0.0,
+        "invariants": 0.0,
+        "typed": 1e-06
+      },
+      "top_examples": [
+        {
+          "task_id": "humaneval_139",
+          "variant_id": "decomposition",
+          "run_id": 0,
+          "position": 383,
+          "value": 0.1015
+        },
+        {
+          "task_id": "humaneval_139",
+          "variant_id": "decomposition",
+          "run_id": 0,
+          "position": 384,
+          "value": 0.1014
+        },
+        {
+          "task_id": "mbpp_291",
+          "variant_id": "typed",
+          "run_id": 0,
+          "position": 14,
+          "value": 0.0863
+        },
+        {
+          "task_id": "mbpp_291",
+          "variant_id": "typed",
+          "run_id": 1,
+          "position": 14,
+          "value": 0.0863
+        },
+        {
+          "task_id": "mbpp_291",
+          "variant_id": "typed",
+          "run_id": 2,
+          "position": 14,
+          "value": 0.0863
+        }
+      ]
+    },
+    {
+      "feature_idx": 12311,
+      "cohens_d": -324.171883,
+      "primary_variant": "typed",
+      "variant_means": {
+        "baseline": 0.0,
+        "control_flow": 0.0,
+        "decomposition": 0.0,
+        "error_handling": 0.0,
+        "invariants": 0.0,
+        "typed": 3e-06
+      },
+      "top_examples": [
+        {
+          "task_id": "mbpp_119",
+          "variant_id": "typed",
+          "run_id": 2,
+          "position": 8,
+          "value": 0.0946
+        },
+        {
+          "task_id": "mbpp_119",
+          "variant_id": "typed",
+          "run_id": 1,
+          "position": 8,
+          "value": 0.0945
+        },
+        {
+          "task_id": "mbpp_119",
+          "variant_id": "typed",
+          "run_id": 0,
+          "position": 8,
+          "value": 0.0945
+        },
+        {
+          "task_id": "mbpp_329",
+          "variant_id": "typed",
+          "run_id": 0,
+          "position": 8,
+          "value": 0.0878
+        },
+        {
+          "task_id": "mbpp_329",
+          "variant_id": "typed",
+          "run_id": 1,
+          "position": 8,
+          "value": 0.0878
+        },
+        {
+          "task_id": "mbpp_329",
+          "variant_id": "typed",
+          "run_id": 2,
+          "position": 8,
+          "value": 0.0878
+        }
+      ]
+    },
+    {
+      "feature_idx": 27052,
+      "cohens_d": 78.063391,
+      "primary_variant": "error_handling",
+      "variant_means": {
+        "baseline": 0.0,
+        "control_flow": 0.0,
+        "decomposition": 0.0,
+        "error_handling": 1e-06,
+        "invariants": 0.0,
+        "typed": 0.0
+      },
+      "top_examples": [
+        {
+          "task_id": "mbpp_212",
+          "variant_id": "error_handling",
+          "run_id": 0,
+          "position": 3,
+          "value": 0.0531
+        },
+        {
+          "task_id": "mbpp_212",
+          "variant_id": "error_handling",
+          "run_id": 2,
+          "position": 3,
+          "value": 0.053
+        },
+        {
+          "task_id": "mbpp_504",
+          "variant_id": "error_handling",
+          "run_id": 0,
+          "position": 3,
+          "value": 0.0523
+        },
+        {
+          "task_id": "mbpp_504",
+          "variant_id": "error_handling",
+          "run_id": 1,
+          "position": 3,
+          "value": 0.0523
+        },
+        {
+          "task_id": "mbpp_504",
+          "variant_id": "error_handling",
+          "run_id": 2,
+          "position": 3,
+          "value": 0.0523
+        }
+      ]
+    }
+  ],
+  "random_control_features": [
+    16691,
+    26758,
+    17617
+  ]
+}

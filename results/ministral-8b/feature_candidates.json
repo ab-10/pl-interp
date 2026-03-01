@@ -1,0 +1,159 @@
+{
+  "candidates": [
+    {
+      "feature_idx": 76259,
+      "cohens_d": 123289.0,
+      "primary_variant": "decomposition",
+      "variant_means": {
+        "baseline": 0.0,
+        "control_flow": 0.0,
+        "decomposition": 1e-06,
+        "error_handling": 0.0,
+        "invariants": 0.0,
+        "typed": 0.0
+      },
+      "top_examples": [
+        {
+          "task_id": "mbpp_12",
+          "variant_id": "decomposition",
+          "run_id": 1,
+          "position": 7,
+          "value": 0.1251
+        },
+        {
+          "task_id": "mbpp_12",
+          "variant_id": "decomposition",
+          "run_id": 0,
+          "position": 7,
+          "value": 0.1251
+        },
+        {
+          "task_id": "mbpp_946",
+          "variant_id": "decomposition",
+          "run_id": 0,
+          "position": 8,
+          "value": 0.1228
+        },
+        {
+          "task_id": "mbpp_946",
+          "variant_id": "decomposition",
+          "run_id": 1,
+          "position": 8,
+          "value": 0.1228
+        }
+      ]
+    },
+    {
+      "feature_idx": 130545,
+      "cohens_d": 655.720307,
+      "primary_variant": "error_handling",
+      "variant_means": {
+        "baseline": 0.0,
+        "control_flow": 0.0,
+        "decomposition": 0.0,
+        "error_handling": 3e-06,
+        "invariants": 0.0,
+        "typed": 0.0
+      },
+      "top_examples": [
+        {
+          "task_id": "mbpp_588",
+          "variant_id": "error_handling",
+          "run_id": 1,
+          "position": 10,
+          "value": 0.133
+        },
+        {
+          "task_id": "mbpp_588",
+          "variant_id": "error_handling",
+          "run_id": 0,
+          "position": 10,
+          "value": 0.133
+        },
+        {
+          "task_id": "mbpp_588",
+          "variant_id": "error_handling",
+          "run_id": 2,
+          "position": 10,
+          "value": 0.133
+        },
+        {
+          "task_id": "mbpp_485",
+          "variant_id": "error_handling",
+          "run_id": 1,
+          "position": 12,
+          "value": 0.1282
+        },
+        {
+          "task_id": "mbpp_485",
+          "variant_id": "error_handling",
+          "run_id": 0,
+          "position": 12,
+          "value": 0.1282
+        },
+        {
+          "task_id": "mbpp_485",
+          "variant_id": "error_handling",
+          "run_id": 2,
+          "position": 12,
+          "value": 0.1282
+        }
+      ]
+    },
+    {
+      "feature_idx": 11736,
+      "cohens_d": -440.315393,
+      "primary_variant": "control_flow",
+      "variant_means": {
+        "baseline": 0.0,
+        "control_flow": 3e-06,
+        "decomposition": 0.0,
+        "error_handling": 0.0,
+        "invariants": 0.0,
+        "typed": 0.0
+      },
+      "top_examples": [
+        {
+          "task_id": "mbpp_860",
+          "variant_id": "control_flow",
+          "run_id": 0,
+          "position": 13,
+          "value": 0.1335
+        },
+        {
+          "task_id": "mbpp_860",
+          "variant_id": "control_flow",
+          "run_id": 2,
+          "position": 13,
+          "value": 0.1335
+        },
+        {
+          "task_id": "mbpp_860",
+          "variant_id": "control_flow",
+          "run_id": 1,
+          "position": 13,
+          "value": 0.1335
+        },
+        {
+          "task_id": "mbpp_676",
+          "variant_id": "control_flow",
+          "run_id": 1,
+          "position": 12,
+          "value": 0.1325
+        },
+        {
+          "task_id": "mbpp_676",
+          "variant_id": "control_flow",
+          "run_id": 2,
+          "position": 12,
+          "value": 0.1325
+        }
+      ]
+    }
+  ],
+  "random_control_features": [
+    116424,
+    40235,
+    94346
+  ]
+}

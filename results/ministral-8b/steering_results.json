@@ -1,0 +1,214 @@
+{
+  "contrastive_steering": {
+    "baseline_pass_rate": 0.622,
+    "baseline_n": 164,
+    "baseline_passed": 102,
+    "conditions": [
+      {
+        "direction": "control_flow",
+        "alpha": -3.0,
+        "pass_rate": 0.5244,
+        "delta": -0.0976,
+        "n_tasks": 164,
+        "n_passed": 86,
+        "fisher_p": 0.09387
+      },
+      {
+        "direction": "control_flow",
+        "alpha": 3.0,
+        "pass_rate": 0.4817,
+        "delta": -0.1402,
+        "n_tasks": 164,
+        "n_passed": 79,
+        "fisher_p": 0.01445
+      },
+      {
+        "direction": "decomposition",
+        "alpha": -3.0,
+        "pass_rate": 0.5793,
+        "delta": -0.0427,
+        "n_tasks": 164,
+        "n_passed": 95,
+        "fisher_p": 0.498843
+      },
+      {
+        "direction": "decomposition",
+        "alpha": 3.0,
+        "pass_rate": 0.4695,
+        "delta": -0.1524,
+        "n_tasks": 164,
+        "n_passed": 77,
+        "fisher_p": 0.007681
+      },
+      {
+        "direction": "error_handling",
+        "alpha": -3.0,
+        "pass_rate": 0.4756,
+        "delta": -0.1463,
+        "n_tasks": 164,
+        "n_passed": 78,
+        "fisher_p": 0.010594
+      },
+      {
+        "direction": "error_handling",
+        "alpha": 3.0,
+        "pass_rate": 0.5366,
+        "delta": -0.0854,
+        "n_tasks": 164,
+        "n_passed": 88,
+        "fisher_p": 0.145823
+      },
+      {
+        "direction": "invariants",
+        "alpha": -3.0,
+        "pass_rate": 0.5427,
+        "delta": -0.0793,
+        "n_tasks": 164,
+        "n_passed": 89,
+        "fisher_p": 0.17901
+      },
+      {
+        "direction": "invariants",
+        "alpha": 3.0,
+        "pass_rate": 0.5,
+        "delta": -0.122,
+        "n_tasks": 164,
+        "n_passed": 82,
+        "fisher_p": 0.034349
+      },
+      {
+        "direction": "typed",
+        "alpha": -3.0,
+        "pass_rate": 0.5244,
+        "delta": -0.0976,
+        "n_tasks": 164,
+        "n_passed": 86,
+        "fisher_p": 0.09387
+      },
+      {
+        "direction": "typed",
+        "alpha": 3.0,
+        "pass_rate": 0.5915,
+        "delta": -0.0305,
+        "n_tasks": 164,
+        "n_passed": 97,
+        "fisher_p": 0.651247
+      }
+    ]
+  },
+  "sae_steering": {
+    "baseline_pass_rate": 0.622,
+    "baseline_n": 164,
+    "baseline_passed": 102,
+    "conditions": [
+      {
+        "direction": "11736",
+        "alpha": -3.0,
+        "pass_rate": 0.5671,
+        "delta": -0.0549,
+        "n_tasks": 164,
+        "n_passed": 93,
+        "fisher_p": 0.368325
+      },
+      {
+        "direction": "11736",
+        "alpha": 3.0,
+        "pass_rate": 0.5732,
+        "delta": -0.0488,
+        "n_tasks": 164,
+        "n_passed": 94,
+        "fisher_p": 0.430652
+      },
+      {
+        "direction": "130545",
+        "alpha": -3.0,
+        "pass_rate": 0.5793,
+        "delta": -0.0427,
+        "n_tasks": 164,
+        "n_passed": 95,
+        "fisher_p": 0.498843
+      },
+      {
+        "direction": "130545",
+        "alpha": 3.0,
+        "pass_rate": 0.5427,
+        "delta": -0.0793,
+        "n_tasks": 164,
+        "n_passed": 89,
+        "fisher_p": 0.17901
+      },
+      {
+        "direction": "76259",
+        "alpha": -3.0,
+        "pass_rate": 0.5732,
+        "delta": -0.0488,
+        "n_tasks": 164,
+        "n_passed": 94,
+        "fisher_p": 0.430652
+      },
+      {
+        "direction": "76259",
+        "alpha": 3.0,
+        "pass_rate": 0.5488,
+        "delta": -0.0732,
+        "n_tasks": 164,
+        "n_passed": 90,
+        "fisher_p": 0.217567
+      },
+      {
+        "direction": "random_116424",
+        "alpha": -3.0,
+        "pass_rate": 0.5305,
+        "delta": -0.0915,
+        "n_tasks": 164,
+        "n_passed": 87,
+        "fisher_p": 0.117596
+      },
+      {
+        "direction": "random_116424",
+        "alpha": 3.0,
+        "pass_rate": 0.5915,
+        "delta": -0.0305,
+        "n_tasks": 164,
+        "n_passed": 97,
+        "fisher_p": 0.651247
+      },
+      {
+        "direction": "random_40235",
+        "alpha": -3.0,
+        "pass_rate": 0.5732,
+        "delta": -0.0488,
+        "n_tasks": 164,
+        "n_passed": 94,
+        "fisher_p": 0.430652
+      },
+      {
+        "direction": "random_40235",
+        "alpha": 3.0,
+        "pass_rate": 0.5122,
+        "delta": -0.1098,
+        "n_tasks": 164,
+        "n_passed": 84,
+        "fisher_p": 0.057988
+      },
+      {
+        "direction": "random_94346",
+        "alpha": -3.0,
+        "pass_rate": 0.6159,
+        "delta": -0.0061,
+        "n_tasks": 164,
+        "n_passed": 101,
+        "fisher_p": 1.0
+      },
+      {
+        "direction": "random_94346",
+        "alpha": 3.0,
+        "pass_rate": 0.5122,
+        "delta": -0.1098,
+        "n_tasks": 164,
+        "n_passed": 84,
+        "fisher_p": 0.057988
+      }
+    ]
+  }
+}
