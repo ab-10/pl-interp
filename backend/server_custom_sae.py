@@ -265,8 +265,12 @@ async def lifespan(app: FastAPI):
             if fid_str in llm_labels:
                 llm = llm_labels[fid_str]
                 entry["description"] = llm.get("description", "")
-                entry["llm_label"] = llm.get("label", "")
                 entry["confidence"] = llm.get("confidence", "")
+                llm_lbl = llm.get("label", "")
+                if llm_lbl:
+                    entry["steering_label"] = entry["label"]
+                    entry["label"] = llm_lbl
+                entry["llm_label"] = llm_lbl
                 entry["code_examples"] = llm.get("examples", [])
         print(f"Merged {sum(1 for k in feature_registry if k in llm_labels)} LLM labels")
 

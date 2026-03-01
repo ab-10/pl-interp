@@ -54,15 +54,29 @@ export default function FeatureSlider({
 }: FeatureSliderProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
-  const infoRef = useRef<HTMLDivElement>(null);
+  const infoButtonRef = useRef<HTMLButtonElement>(null);
+  const infoPopoverRef = useRef<HTMLDivElement>(null);
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
   const hasDetails = !!(description || (codeExamples && codeExamples.length > 0));
   const hasInfo = !!(primaryVariant || cohensD !== undefined);
+
+  const handleInfoToggle = () => {
+    if (!infoOpen && infoButtonRef.current) {
+      const rect = infoButtonRef.current.getBoundingClientRect();
+      setPopoverPos({ top: rect.bottom + 4, left: Math.max(8, rect.left) });
+    }
+    setInfoOpen(!infoOpen);
+  };
 
   // Close info popover on outside click
   useEffect(() => {
     if (!infoOpen) return;
     const handler = (e: MouseEvent) => {
-      if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        infoPopoverRef.current && !infoPopoverRef.current.contains(target) &&
+        infoButtonRef.current && !infoButtonRef.current.contains(target)
+      ) {
         setInfoOpen(false);
       }
     };
@@ -98,16 +112,21 @@ export default function FeatureSlider({
             {label}
           </span>
           {hasInfo && (
-            <div className="relative flex-shrink-0" ref={infoRef}>
+            <div className="relative flex-shrink-0">
               <button
-                onClick={() => setInfoOpen(!infoOpen)}
+                ref={infoButtonRef}
+                onClick={handleInfoToggle}
                 className="flex items-center justify-center h-3.5 w-3.5 rounded-full border border-zinc-300 text-[9px] font-medium text-zinc-400 hover:border-zinc-400 hover:text-zinc-600 transition-colors leading-none"
                 title="Feature info"
               >
                 i
               </button>
               {infoOpen && (
-                <div className="absolute left-0 top-5 z-50 w-56 rounded-lg border border-zinc-200 bg-white p-3 shadow-lg text-[11px] text-zinc-600">
+                <div
+                  ref={infoPopoverRef}
+                  className="fixed z-[200] w-56 rounded-lg border border-zinc-200 bg-white p-3 shadow-lg text-[11px] text-zinc-600"
+                  style={{ top: popoverPos.top, left: popoverPos.left }}
+                >
                   {featureId !== undefined && (
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-mono text-[10px] text-zinc-400">#{featureId}</span>

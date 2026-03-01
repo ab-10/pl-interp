@@ -10,6 +10,7 @@ import {
   ServerCapabilities,
   ServerInfo,
 } from "@/lib/types";
+import sampleGeneration from "@/lib/sampleGeneration.json";
 import {
   fetchFeatures,
   fetchServerInfo,
@@ -20,12 +21,11 @@ import PromptInput from "@/components/PromptInput";
 import FeaturePanel from "@/components/FeaturePanel";
 import ResultsPanel from "@/components/ResultsPanel";
 import ErrorBanner from "@/components/ErrorBanner";
-import TokenHeatmap from "@/components/TokenHeatmap";
 import AlphaSweep from "@/components/AlphaSweep";
 import ActivationMatrix from "@/components/ActivationMatrix";
 import ActivationTimeline from "@/components/ActivationTimeline";
 import ActivationDistribution from "@/components/ActivationDistribution";
-import CoActivationGraph from "@/components/CoActivationGraph";
+import AnnotatedCode from "@/components/AnnotatedCode";
 import LLMAnalysisTab from "@/components/LLMAnalysisTab";
 
 const FeatureMap = dynamic(() => import("@/components/FeatureMap"), {
@@ -50,8 +50,33 @@ const DEFAULT_CAPS: ServerCapabilities = {
 
 const SWEEP_ALPHAS = [-2, -1, 0, 1, 2, 3];
 
+/**
+ * Extract code from model output — mirrors experiments/evaluation/extractor.py.
+ * Strategy: 1) markdown code blocks, 2) bare function def, 3) full text fallback.
+ */
+function extractCode(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+
+  // Strategy 1: markdown code blocks
+  const blockPattern = /```(?:python)?\s*\n(.*?)```/gs;
+  const blocks: string[] = [];
+  let m;
+  while ((m = blockPattern.exec(trimmed)) !== null) {
+    blocks.push(m[1].trim());
+  }
+  if (blocks.length > 0) return blocks[0];
+
+  // Strategy 2: bare function def
+  const funcMatch = trimmed.match(/^(def \w+.*)/ms);
+  if (funcMatch) return funcMatch[1].trim();
+
+  // Strategy 3: full text fallback
+  return trimmed;
+}
+
 export default function Home() {
-  const [prompt, setPrompt] = useState("def fibonacci(n):");
+  const [prompt, setPrompt] = useState("Write a Python fibonacci function. Only output code.");
   const [features, setFeatures] = useState<EnrichedFeature[]>([]);
   const [strengths, setStrengths] = useState<Record<number, number>>({});
   const [customStrengths, setCustomStrengths] = useState<Record<number, number>>({});
@@ -61,13 +86,14 @@ export default function Home() {
   const [capabilities, setCapabilities] = useState<ServerCapabilities>(DEFAULT_CAPS);
   const [featureMapPoints, setFeatureMapPoints] = useState<FeatureMapPoint[] | null>(null);
 
-  const [result, setResult] = useState<EnrichedGenerateResponse | null>(null);
+  const [result, setResult] = useState<EnrichedGenerateResponse | null>(
+    sampleGeneration as EnrichedGenerateResponse,
+  );
   const [loading, setLoading] = useState(false);
   const [featuresLoading, setFeaturesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<Tab>("code");
-  const [showHeatmap, setShowHeatmap] = useState(false);
   const [showSweep, setShowSweep] = useState(false);
   const [selectedSweepIndex, setSelectedSweepIndex] = useState(0);
 
@@ -136,6 +162,13 @@ export default function Home() {
         includeActivations: capabilities.token_activations,
         alphas: showSweep && capabilities.alpha_sweep ? SWEEP_ALPHAS : undefined,
       });
+      res.baseline = extractCode(res.baseline);
+      res.steered = extractCode(res.steered);
+      if (res.sweep_results) {
+        for (const sr of res.sweep_results) {
+          sr.text = extractCode(sr.text);
+        }
+      }
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
@@ -271,47 +304,26 @@ export default function Home() {
                 </button>
               ))}
 
-            {/* Visualization toggles */}
-            {activeTab === "code" && (capabilities.token_activations || capabilities.alpha_sweep) && (
+            {/* Sweep toggle */}
+            {activeTab === "code" && capabilities.alpha_sweep && (
               <div className="ml-auto flex items-center gap-3">
-                {capabilities.token_activations && (
-                  <label className="flex items-center gap-1.5 cursor-pointer group">
+                <label className="flex items-center gap-1.5 cursor-pointer group">
+                  <div
+                    className={`relative h-4 w-7 rounded-full transition-colors ${
+                      showSweep ? "bg-blue-500" : "bg-zinc-200"
+                    }`}
+                    onClick={() => setShowSweep(!showSweep)}
+                  >
                     <div
-                      className={`relative h-4 w-7 rounded-full transition-colors ${
-                        showHeatmap ? "bg-blue-500" : "bg-zinc-200"
+                      className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
+                        showSweep ? "translate-x-3.5" : "translate-x-0.5"
                       }`}
-                      onClick={() => setShowHeatmap(!showHeatmap)}
-                    >
-                      <div
-                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
-                          showHeatmap ? "translate-x-3.5" : "translate-x-0.5"
-                        }`}
-                      />
-                    </div>
-                    <span className="text-[11px] text-zinc-400 group-hover:text-zinc-600">
-                      Heatmap
-                    </span>
-                  </label>
-                )}
-                {capabilities.alpha_sweep && (
-                  <label className="flex items-center gap-1.5 cursor-pointer group">
-                    <div
-                      className={`relative h-4 w-7 rounded-full transition-colors ${
-                        showSweep ? "bg-blue-500" : "bg-zinc-200"
-                      }`}
-                      onClick={() => setShowSweep(!showSweep)}
-                    >
-                      <div
-                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
-                          showSweep ? "translate-x-3.5" : "translate-x-0.5"
-                        }`}
-                      />
-                    </div>
-                    <span className="text-[11px] text-zinc-400 group-hover:text-zinc-600">
-                      Sweep
-                    </span>
-                  </label>
-                )}
+                    />
+                  </div>
+                  <span className="text-[11px] text-zinc-400 group-hover:text-zinc-600">
+                    Sweep
+                  </span>
+                </label>
               </div>
             )}
           </div>
@@ -334,21 +346,14 @@ export default function Home() {
                 {showSweep && result?.sweep_results && result.sweep_results.length > 0 ? (
                   <AlphaSweep
                     results={result.sweep_results}
-                    baselineText={prompt + result.baseline}
+                    baselineText={result.baseline}
                     selectedIndex={selectedSweepIndex}
                     onIndexChange={setSelectedSweepIndex}
-                    prompt={prompt}
-                  />
-                ) : showHeatmap && result?.token_activations && result.token_activations.length > 0 ? (
-                  <TokenHeatmap
-                    tokens={result.token_activations}
-                    activeFeatureIds={activeFeatureIds}
-                    prompt={prompt}
                   />
                 ) : (
                   <ResultsPanel
-                    baseline={result ? prompt + result.baseline : null}
-                    steered={result ? prompt + result.steered : null}
+                    baseline={result ? result.baseline : null}
+                    steered={result ? result.steered : null}
                     loading={false}
                   />
                 )}
@@ -358,84 +363,92 @@ export default function Home() {
             {/* Analysis Tab */}
             {activeTab === "analysis" && !loading && (
               <div className="flex flex-col gap-6">
-                {result?.token_activations && result.token_activations.length > 0 && activeFeatureIds.length > 0 ? (
+                {result ? (
                   <>
-                    {/* Activation Matrix */}
-                    <section className="rounded-lg border border-zinc-200 bg-white p-5">
-                      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
-                        Activation Matrix
-                      </h3>
-                      <p className="mb-3 text-[11px] text-zinc-400">
-                        Per-token activation intensity for each steered feature. Brighter = stronger activation.
-                      </p>
-                      <ActivationMatrix
-                        tokens={result.token_activations}
-                        featureIds={activeFeatureIds}
-                        featureLabels={featureLabels}
-                      />
-                    </section>
+                    {/* Full Layer Activation — top 32 most active SAE features */}
+                    {result.layer_activations && result.layer_top_features && result.layer_top_features.length > 0 && (
+                      <section className="rounded-lg border border-zinc-200 bg-white p-5">
+                        <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                          Layer Activation
+                        </h3>
+                        <p className="mb-3 text-[11px] text-zinc-400">
+                          Top {result.layer_top_features.length} most active SAE features across all generated tokens. Each column is a neuron.
+                        </p>
+                        <ActivationMatrix
+                          tokens={result.layer_activations}
+                          featureIds={result.layer_top_features.map((f) => f.id)}
+                          featureLabels={featureLabels}
+                        />
+                      </section>
+                    )}
 
-                    {/* Activation Timeline */}
-                    <section className="rounded-lg border border-zinc-200 bg-white p-5">
-                      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
-                        Activation Timeline
-                      </h3>
-                      <p className="mb-3 text-[11px] text-zinc-400">
-                        How feature activations evolve as the model generates each token.
-                      </p>
-                      <ActivationTimeline
-                        tokens={result.token_activations}
-                        featureIds={activeFeatureIds}
-                        featureLabels={featureLabels}
-                      />
-                    </section>
-
-                    {/* Distribution + Co-Activation side by side */}
+                    {/* Generated code + distribution side by side */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Generated code with activation overlay */}
+                      <section className="rounded-lg border border-zinc-200 bg-white p-5">
+                        <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                          Steered Output
+                        </h3>
+                        {result.token_activations && activeFeatureIds.length > 0 ? (
+                          <AnnotatedCode
+                            tokens={result.token_activations}
+                            featureIds={activeFeatureIds}
+                            featureLabels={featureLabels}
+                          />
+                        ) : (
+                          <pre className="overflow-auto rounded-lg border border-zinc-100 bg-zinc-50 p-4 text-[13px] leading-relaxed font-mono text-zinc-700">
+                            <code>{result.steered}</code>
+                          </pre>
+                        )}
+                      </section>
+
+                      {/* Distribution per steered feature */}
                       <section className="rounded-lg border border-zinc-200 bg-white p-5">
                         <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
                           Activation Distribution
                         </h3>
-                        <p className="mb-3 text-[11px] text-zinc-400">
-                          How each feature&apos;s activations are distributed across tokens.
-                        </p>
-                        <ActivationDistribution
-                          tokens={result.token_activations}
-                          featureIds={activeFeatureIds}
-                          featureLabels={featureLabels}
-                        />
-                      </section>
-
-                      <section className="rounded-lg border border-zinc-200 bg-white p-5">
-                        <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
-                          Feature Co-Activation
-                        </h3>
-                        <p className="mb-3 text-[11px] text-zinc-400">
-                          Correlation between feature activation patterns. Blue = fire together, red = inverse.
-                        </p>
-                        <CoActivationGraph
-                          tokens={result.token_activations}
-                          featureIds={activeFeatureIds}
-                          featureLabels={featureLabels}
-                        />
+                        {result.token_activations && activeFeatureIds.length > 0 ? (
+                          <ActivationDistribution
+                            tokens={result.token_activations}
+                            featureIds={activeFeatureIds}
+                            featureLabels={featureLabels}
+                          />
+                        ) : (
+                          <p className="text-[11px] text-zinc-400">
+                            {activeFeatureIds.length === 0
+                              ? "Adjust feature sliders to see distribution"
+                              : "No activation data available"}
+                          </p>
+                        )}
                       </section>
                     </div>
+
+                    {/* Activation Timeline — steered features over token positions */}
+                    {result.token_activations && activeFeatureIds.length > 0 && (
+                      <section className="rounded-lg border border-zinc-200 bg-white p-5">
+                        <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                          Activation Timeline
+                        </h3>
+                        <p className="mb-3 text-[11px] text-zinc-400">
+                          How steered feature activations evolve across generated tokens.
+                        </p>
+                        <ActivationTimeline
+                          tokens={result.token_activations}
+                          featureIds={activeFeatureIds}
+                          featureLabels={featureLabels}
+                        />
+                      </section>
+                    )}
                   </>
                 ) : (
                   <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50">
                     <div className="text-center">
                       <p className="text-sm text-zinc-400">
-                        {!result
-                          ? "Generate code to see activation analysis"
-                          : activeFeatureIds.length === 0
-                            ? "Adjust feature sliders to see activation analysis"
-                            : "No activation data available — server may not support token activations"}
+                        Generate code to see activation analysis
                       </p>
-                      {!result && (
-                        <p className="text-[11px] text-zinc-300 mt-1">
-                          Activation data is captured automatically when generating
-                        </p>
-                      )}
+                      <p className="text-[11px] text-zinc-300 mt-1">
+                        Activation data is captured automatically
+                      </p>
                     </div>
                   </div>
                 )}
