@@ -79,6 +79,7 @@ SAE_CHECKPOINT = os.environ.get("SAE_CHECKPOINT", "")
 FEATURE_CANDIDATES = os.environ.get("FEATURE_CANDIDATES", "")
 STEERING_RESULTS = os.environ.get("STEERING_RESULTS", "")
 FEATURE_LABELS = os.environ.get("FEATURE_LABELS", "")
+FEATURE_SUCCESS = os.environ.get("FEATURE_SUCCESS", "")
 MODEL_PATH = os.environ.get("MODEL_PATH", "mistralai/Mistral-7B-Instruct-v0.3")
 STEER_LAYER = int(os.environ.get("STEER_LAYER", "16"))
 MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "200"))
@@ -108,6 +109,10 @@ class RelabelRequest(BaseModel):
     update_registry: bool = False
 
 
+class AnalyzeSuccessRequest(BaseModel):
+    feature_id: int
+
+
 # ---------------------------------------------------------------------------
 # Global state
 # ---------------------------------------------------------------------------
@@ -117,6 +122,7 @@ tokenizer: AutoTokenizer | None = None
 sae: TopKSAE | None = None
 feature_registry: dict[str, dict] = {}
 feature_map_data: dict | None = None
+success_analysis_data: dict | None = None  # Loaded from feature_success_analysis.json
 bedrock_client = None  # Lazy-initialized on first /relabel_feature call
 
 
@@ -189,7 +195,7 @@ def _get_monotonicity_data(direction_name: str, steering_analysis: dict) -> dict
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global model, tokenizer, sae, feature_registry, feature_map_data
+    global model, tokenizer, sae, feature_registry, feature_map_data, success_analysis_data
 
     if not SAE_CHECKPOINT:
         raise RuntimeError("SAE_CHECKPOINT environment variable not set")
@@ -309,6 +315,27 @@ async def lifespan(app: FastAPI):
             feature_map_data = json.load(f)
         print(f"Feature map loaded.")
 
+    # --- Load success analysis if configured ---
+    if FEATURE_SUCCESS and Path(FEATURE_SUCCESS).exists():
+        print(f"Loading feature success analysis from {FEATURE_SUCCESS}...")
+        with open(FEATURE_SUCCESS) as f:
+            success_analysis_data = json.load(f)
+        n = len(success_analysis_data.get("features", {}))
+        print(f"Loaded success analysis for {n} features")
+        # Merge verdicts into feature registry
+        for fid_str, analysis in success_analysis_data.get("features", {}).items():
+            if fid_str in feature_registry:
+                feature_registry[fid_str]["success_verdict"] = analysis.get("verdict")
+                feature_registry[fid_str]["success_mechanism"] = analysis.get("mechanism")
+                feature_registry[fid_str]["success_confidence"] = analysis.get("llm_confidence")
+                feature_registry[fid_str]["success_stats"] = {
+                    "cohens_d": analysis.get("cohens_d"),
+                    "mean_pass": analysis.get("mean_pass"),
+                    "mean_fail": analysis.get("mean_fail"),
+                    "fire_rate_pass": analysis.get("fire_rate_pass"),
+                    "fire_rate_fail": analysis.get("fire_rate_fail"),
+                }
+
     yield
 
     del model, tokenizer, sae
@@ -345,6 +372,7 @@ def get_info():
             "enriched_features": True,
             "density": True,
             "llm_analysis": bool(FEATURE_LABELS),
+            "success_analysis": bool(success_analysis_data),
         },
     }
 
@@ -419,6 +447,78 @@ def relabel_feature(req: RelabelRequest):
         "description": parsed["description"],
         "confidence": parsed["confidence"],
         "prompt_used": prompt,
+    }
+
+
+@app.get("/feature_success")
+def get_feature_success():
+    """Return pre-computed feature success analysis data."""
+    if success_analysis_data is None:
+        raise HTTPException(status_code=404, detail="Feature success analysis not available")
+    return success_analysis_data
+
+
+@app.post("/analyze_feature_success")
+def analyze_feature_success(req: AnalyzeSuccessRequest):
+    """Run LLM success analysis for a single feature using pre-computed data."""
+    global bedrock_client
+
+    fid_str = str(req.feature_id)
+
+    # Get pre-computed data for this feature
+    if success_analysis_data is None:
+        raise HTTPException(status_code=404, detail="No success analysis data loaded")
+
+    feat_data = success_analysis_data.get("features", {}).get(fid_str)
+    if feat_data is None:
+        raise HTTPException(status_code=404, detail=f"Feature {req.feature_id} not in success analysis")
+
+    layer = success_analysis_data.get("layer", STEER_LAYER)
+    num_layers = 36  # TODO: read from model config
+
+    from experiments.sae.analyze_success import build_success_prompt, parse_success_response
+
+    prompt = build_success_prompt(
+        feature_idx=req.feature_id,
+        label=feat_data.get("label", "unknown"),
+        description=feat_data.get("description", ""),
+        layer=layer,
+        num_layers=num_layers,
+        cohens_d=feat_data.get("cohens_d", 0.0),
+        mean_pass=feat_data.get("mean_pass", 0.0),
+        mean_fail=feat_data.get("mean_fail", 0.0),
+        fire_rate_pass=feat_data.get("fire_rate_pass", 0.0),
+        fire_rate_fail=feat_data.get("fire_rate_fail", 0.0),
+        pass_examples=feat_data.get("pass_examples", []),
+        fail_examples=feat_data.get("fail_examples", []),
+    )
+
+    if bedrock_client is None:
+        import boto3
+        bedrock_client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+
+    try:
+        response_text = call_bedrock(bedrock_client, prompt, max_tokens=500)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Bedrock call failed: {e}")
+
+    parsed = parse_success_response(response_text)
+
+    # Update in-memory data
+    feat_data["verdict"] = parsed["verdict"]
+    feat_data["mechanism"] = parsed["mechanism"]
+    feat_data["llm_confidence"] = parsed["confidence"]
+
+    if fid_str in feature_registry:
+        feature_registry[fid_str]["success_verdict"] = parsed["verdict"]
+        feature_registry[fid_str]["success_mechanism"] = parsed["mechanism"]
+        feature_registry[fid_str]["success_confidence"] = parsed["confidence"]
+
+    return {
+        "feature_id": req.feature_id,
+        "verdict": parsed["verdict"],
+        "mechanism": parsed["mechanism"],
+        "confidence": parsed["confidence"],
     }
 
 
@@ -515,20 +615,21 @@ def generate(req: GenerateRequest):
             combined_direction += strength * sae.W_dec[feat_id].to(device=device, dtype=torch.float16)
 
     # --- Helper: generate with a given direction and optional activation capture ---
+    TOP_K_LAYER = 32  # Number of top features to return for full-layer view
+
     def _generate_with_direction(direction: torch.Tensor, alpha: float, capture_activations: bool):
-        """Generate text with a steering hook. Returns (text, token_activations_or_None)."""
+        """Generate text with a steering hook. Returns (text, token_activations, layer_activations, layer_top_features)."""
         hook_fn = make_steering_hook(direction, alpha=alpha)
         handle = model.model.layers[STEER_LAYER].register_forward_hook(hook_fn)
 
         captured_hidden_states: list[torch.Tensor] = []
         capture_handle = None
 
-        if capture_activations and active_feat_ids:
+        if capture_activations:
             def capture_hook(module, args, output):
                 is_tuple = isinstance(output, tuple)
                 hidden_states = output[0] if is_tuple else output
                 if hidden_states.shape[1] == 1:
-                    # Decode step: capture hidden states (detach + clone to avoid memory issues)
                     captured_hidden_states.append(hidden_states.detach().clone().squeeze(1))
                 return output
 
@@ -545,49 +646,73 @@ def generate(req: GenerateRequest):
 
         # Build token activations if captured
         token_activations = None
-        if capture_activations and active_feat_ids and captured_hidden_states:
+        layer_activations = None
+        layer_top_features = None
+
+        if capture_activations and captured_hidden_states:
             stacked = torch.cat(captured_hidden_states, dim=0)  # (n_tokens, d_model)
-            # Use sae.encode() to get full pre-activation latents for ALL features,
-            # not just top-k. This ensures we see activations for steered features
-            # even when they don't appear in the top-k sparse set.
             with torch.no_grad():
                 all_latents = sae.encode(stacked)  # (n_tokens, d_sae)
 
-            # Get generated token IDs (excluding prompt)
             generated_token_ids = gen_ids[0][prompt_len:].tolist()
             token_strings = tokenizer.convert_ids_to_tokens(generated_token_ids)
-
-            active_feat_list = sorted(active_feat_ids)
             n_tokens = min(len(token_strings), all_latents.shape[0])
-            token_activations = []
+
+            # Steered feature activations (existing behavior)
+            if active_feat_ids:
+                active_feat_list = sorted(active_feat_ids)
+                token_activations = []
+                for pos in range(n_tokens):
+                    active_at_pos = {}
+                    for feat_idx in active_feat_list:
+                        val = all_latents[pos, feat_idx].item()
+                        if abs(val) > 1e-6:
+                            active_at_pos[str(feat_idx)] = round(val, 4)
+                    token_activations.append({
+                        "token": token_strings[pos],
+                        "activations": active_at_pos,
+                    })
+
+            # Full-layer: top-k features by max activation across all tokens
+            max_per_feat = all_latents[:n_tokens].max(dim=0).values  # (d_sae,)
+            k = min(TOP_K_LAYER, max_per_feat.shape[0])
+            top_vals, top_ids = torch.topk(max_per_feat, k=k)
+            top_ids_list = top_ids.tolist()
+
+            layer_top_features = [
+                {"id": int(fid), "max_activation": round(float(val), 4)}
+                for fid, val in zip(top_ids_list, top_vals.tolist())
+            ]
+
+            layer_activations = []
             for pos in range(n_tokens):
-                active_at_pos = {}
-                for feat_idx in active_feat_list:
+                feat_acts = {}
+                for feat_idx in top_ids_list:
                     val = all_latents[pos, feat_idx].item()
                     if abs(val) > 1e-6:
-                        active_at_pos[str(feat_idx)] = round(val, 4)
-                token_activations.append({
+                        feat_acts[str(feat_idx)] = round(val, 4)
+                layer_activations.append({
                     "token": token_strings[pos],
-                    "activations": active_at_pos,
+                    "activations": feat_acts,
                 })
 
-        return text, token_activations
+        return text, token_activations, layer_activations, layer_top_features
 
     # --- Main steered generation (alpha=1.0, strength already baked into direction) ---
-    steered_text, steered_token_activations = _generate_with_direction(
+    steered_text, steered_token_activations, steered_layer_acts, steered_layer_top = _generate_with_direction(
         combined_direction, alpha=1.0, capture_activations=req.include_activations
     )
 
     response = {"baseline": baseline_text, "steered": steered_text}
 
-    if req.include_activations and steered_token_activations is not None:
-        response["token_activations"] = steered_token_activations
-
-        # --- Activation stats per feature ---
-        response["activation_stats"] = _compute_activation_stats(steered_token_activations, active)
-
-        # --- Top activating tokens per feature ---
-        response["top_activating_tokens"] = _compute_top_activating_tokens(steered_token_activations, active)
+    if req.include_activations:
+        if steered_token_activations is not None:
+            response["token_activations"] = steered_token_activations
+            response["activation_stats"] = _compute_activation_stats(steered_token_activations, active)
+            response["top_activating_tokens"] = _compute_top_activating_tokens(steered_token_activations, active)
+        if steered_layer_acts is not None:
+            response["layer_activations"] = steered_layer_acts
+            response["layer_top_features"] = steered_layer_top
 
     # --- Density computation ---
     response["baseline_density"] = compute_all_densities(baseline_text)
@@ -605,14 +730,14 @@ def generate(req: GenerateRequest):
             torch.manual_seed(42)
             if torch.cuda.is_available():
                 torch.cuda.manual_seed(42)
-            sweep_text, sweep_token_activations = _generate_with_direction(
+            sweep_text, sweep_tok_acts, sweep_layer_acts, sweep_layer_top = _generate_with_direction(
                 combined_direction, alpha=alpha_val, capture_activations=req.include_activations
             )
             sweep_entry = {"alpha": alpha_val, "text": sweep_text}
-            if req.include_activations and sweep_token_activations is not None:
-                sweep_entry["token_activations"] = sweep_token_activations
-                sweep_entry["activation_stats"] = _compute_activation_stats(sweep_token_activations, active)
-                sweep_entry["top_activating_tokens"] = _compute_top_activating_tokens(sweep_token_activations, active)
+            if req.include_activations and sweep_tok_acts is not None:
+                sweep_entry["token_activations"] = sweep_tok_acts
+                sweep_entry["activation_stats"] = _compute_activation_stats(sweep_tok_acts, active)
+                sweep_entry["top_activating_tokens"] = _compute_top_activating_tokens(sweep_tok_acts, active)
             sweep_results.append(sweep_entry)
         response["sweep_results"] = sweep_results
 

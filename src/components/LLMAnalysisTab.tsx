@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { EnrichedFeature, RelabelResponse } from "@/lib/types";
-import { fetchDefaultPrompt, relabelFeature } from "@/lib/api";
+import { EnrichedFeature, FeatureSuccessData, RelabelResponse } from "@/lib/types";
+import { fetchDefaultPrompt, fetchFeatureSuccess, relabelFeature } from "@/lib/api";
 import HighlightedCode from "./HighlightedCode";
+import SuccessAnalysisPanel from "./SuccessAnalysisPanel";
 
 const CONFIDENCE_COLORS: Record<string, string> = {
   high: "bg-emerald-50 text-emerald-700",
@@ -31,6 +32,12 @@ export default function LLMAnalysisTab({ features }: LLMAnalysisTabProps) {
   const [relabelResult, setRelabelResult] = useState<RelabelResponse | null>(null);
   const [relabelError, setRelabelError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [successData, setSuccessData] = useState<FeatureSuccessData | null>(null);
+
+  // Load success analysis data on mount
+  useEffect(() => {
+    fetchFeatureSuccess().then(setSuccessData);
+  }, []);
 
   // Filter to features with code examples
   const labeledFeatures = features.filter(
@@ -137,6 +144,18 @@ export default function LLMAnalysisTab({ features }: LLMAnalysisTabProps) {
                 <span className="font-mono text-[10px] text-zinc-400">
                   #{f.id}
                 </span>
+                {(f.success_verdict ?? successData?.features?.[String(f.id)]?.verdict) &&
+                  !(f.success_verdict ?? successData?.features?.[String(f.id)]?.verdict)?.startsWith("[") && (
+                  <span className={`ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                    (f.success_verdict ?? successData?.features?.[String(f.id)]?.verdict) === "contributes"
+                      ? "bg-emerald-50 text-emerald-600"
+                      : (f.success_verdict ?? successData?.features?.[String(f.id)]?.verdict) === "hinders"
+                        ? "bg-rose-50 text-rose-600"
+                        : "bg-zinc-100 text-zinc-500"
+                  }`}>
+                    {f.success_verdict ?? successData?.features?.[String(f.id)]?.verdict}
+                  </span>
+                )}
               </div>
               <div className="text-[12px] font-medium text-zinc-700 mt-0.5 truncate">
                 {f.llm_label || f.label}
@@ -216,6 +235,9 @@ export default function LLMAnalysisTab({ features }: LLMAnalysisTabProps) {
                 </div>
               </div>
             )}
+
+            {/* Success Analysis */}
+            <SuccessAnalysisPanel feature={selected} successData={successData} />
 
             {/* Re-label section */}
             <div className="border-t border-zinc-200 pt-4">

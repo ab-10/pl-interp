@@ -64,6 +64,16 @@ export interface EnrichedFeature {
   llm_label?: string;
   confidence?: "high" | "medium" | "low";
   code_examples?: CodeExample[];
+  success_verdict?: string;
+  success_mechanism?: string;
+  success_confidence?: string;
+  success_stats?: {
+    cohens_d?: number;
+    mean_pass?: number;
+    mean_fail?: number;
+    fire_rate_pass?: number;
+    fire_rate_fail?: number;
+  };
 }
 
 // ── Token activation types ────────────────────────────────────────
@@ -93,6 +103,11 @@ export interface TopActivatingToken {
   activation: number;
 }
 
+export interface LayerTopFeature {
+  id: number;
+  max_activation: number;
+}
+
 export interface EnrichedGenerateResponse extends GenerateResponse {
   token_activations?: TokenActivation[];
   sweep_results?: SweepResult[];
@@ -100,6 +115,8 @@ export interface EnrichedGenerateResponse extends GenerateResponse {
   steered_density?: Record<string, number>;
   activation_stats?: Record<string, ActivationStats>;
   top_activating_tokens?: Record<string, TopActivatingToken[]>;
+  layer_activations?: TokenActivation[];
+  layer_top_features?: LayerTopFeature[];
 }
 
 // ── Feature map types ─────────────────────────────────────────────
@@ -122,6 +139,53 @@ export interface ServerCapabilities {
   enriched_features: boolean;
   density: boolean;
   llm_analysis: boolean;
+  success_analysis?: boolean;
+}
+
+// ── Feature success analysis types ──────────────────────────────
+
+export interface SuccessCodeExample {
+  task_id: string;
+  code_context: string;
+  activation: number;
+}
+
+export interface FeatureSuccessEntry {
+  label: string;
+  description: string;
+  cohens_d: number;
+  mean_pass: number;
+  mean_fail: number;
+  fire_rate_pass: number;
+  fire_rate_fail: number;
+  fire_count_pass: number;
+  fire_count_fail: number;
+  verdict: string;
+  mechanism: string;
+  llm_confidence: string;
+  pass_examples: SuccessCodeExample[];
+  fail_examples: SuccessCodeExample[];
+}
+
+export interface FeatureSuccessData {
+  model: string;
+  layer: number;
+  analyzer: string;
+  features: Record<string, FeatureSuccessEntry>;
+  summary: {
+    total_analyzed: number;
+    contributes: number;
+    neutral: number;
+    hinders: number;
+    pending: number;
+  };
+}
+
+export interface AnalyzeSuccessResponse {
+  feature_id: number;
+  verdict: string;
+  mechanism: string;
+  confidence: string;
 }
 
 // ── LLM Analysis types ──────────────────────────────────────────

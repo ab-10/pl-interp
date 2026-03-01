@@ -1,8 +1,10 @@
 import {
+  AnalyzeSuccessResponse,
   EnrichedFeature,
   EnrichedGenerateResponse,
   FeatureMapPoint,
   FeatureOverride,
+  FeatureSuccessData,
   RelabelResponse,
   ServerInfo,
 } from "./types";
@@ -38,6 +40,10 @@ export async function fetchFeatures(): Promise<EnrichedFeature[]> {
         llm_label: v.llm_label as string | undefined,
         confidence: v.confidence as EnrichedFeature["confidence"],
         code_examples: v.code_examples as EnrichedFeature["code_examples"],
+        success_verdict: v.success_verdict as string | undefined,
+        success_mechanism: v.success_mechanism as string | undefined,
+        success_confidence: v.success_confidence as string | undefined,
+        success_stats: v.success_stats as EnrichedFeature["success_stats"],
       };
     });
   }
@@ -134,4 +140,31 @@ export async function fetchFeatureMap(): Promise<FeatureMapPoint[] | null> {
   } catch {
     return null;
   }
+}
+
+/** Fetch pre-computed feature success analysis. Returns null if unavailable. */
+export async function fetchFeatureSuccess(): Promise<FeatureSuccessData | null> {
+  try {
+    const res = await fetch(`${API_BASE}/feature_success`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Run LLM success analysis for a single feature (re-analyze with fresh Bedrock call). */
+export async function analyzeFeatureSuccess(
+  featureId: number,
+): Promise<AnalyzeSuccessResponse> {
+  const res = await fetch(`${API_BASE}/analyze_feature_success`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ feature_id: featureId }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(detail.detail || `Analysis failed: ${res.statusText}`);
+  }
+  return res.json();
 }
