@@ -72,6 +72,7 @@ def compute_all_densities(text: str) -> dict[str, float]:
 SAE_CHECKPOINT = os.environ.get("SAE_CHECKPOINT", "")
 FEATURE_CANDIDATES = os.environ.get("FEATURE_CANDIDATES", "")
 STEERING_RESULTS = os.environ.get("STEERING_RESULTS", "")
+FEATURE_LABELS = os.environ.get("FEATURE_LABELS", "")
 MODEL_PATH = os.environ.get("MODEL_PATH", "mistralai/Mistral-7B-Instruct-v0.3")
 STEER_LAYER = int(os.environ.get("STEER_LAYER", "16"))
 MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "200"))
@@ -235,6 +236,20 @@ async def lifespan(app: FastAPI):
             "category": "control",
             "slider": {"min": -5, "max": 5, "step": 0.5, "default": 0},
         }
+
+    # --- Load LLM-generated feature labels if available ---
+    if FEATURE_LABELS and Path(FEATURE_LABELS).exists():
+        print(f"Loading LLM feature labels from {FEATURE_LABELS}...")
+        with open(FEATURE_LABELS) as f:
+            llm_labels = json.load(f).get("features", {})
+        for fid_str, entry in feature_registry.items():
+            if fid_str in llm_labels:
+                llm = llm_labels[fid_str]
+                entry["description"] = llm.get("description", "")
+                entry["llm_label"] = llm.get("label", "")
+                entry["confidence"] = llm.get("confidence", "")
+                entry["code_examples"] = llm.get("examples", [])
+        print(f"Merged {sum(1 for k in feature_registry if k in llm_labels)} LLM labels")
 
     # --- Pre-compute logit attribution for each feature ---
     print("Computing logit attribution for features...")
@@ -501,12 +516,16 @@ def generate(req: GenerateRequest):
 
     # --- Alpha sweep ---
     if req.alphas is not None:
-        # Compute a base direction WITHOUT strength multiplication
-        # (just the sum of W_dec[feat_id] for each active feature, weighted by strength but NOT by alpha)
-        # The combined_direction already has strength baked in, so we use it as the base direction.
-        # Each alpha in the sweep multiplies this base direction.
         sweep_results = []
         for alpha_val in req.alphas:
+            # Alpha=0 means no steering — reuse baseline to avoid sampling noise
+            if alpha_val == 0.0:
+                sweep_results.append({"alpha": alpha_val, "text": baseline_text})
+                continue
+            # Set seed per alpha for reproducible comparison across sweep points
+            torch.manual_seed(42)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(42)
             sweep_text, sweep_token_activations = _generate_with_direction(
                 combined_direction, alpha=alpha_val, capture_activations=req.include_activations
             )
