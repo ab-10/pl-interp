@@ -4,18 +4,13 @@ import { Feature } from "@/lib/types";
 import FeatureSlider from "./FeatureSlider";
 import CustomFeatureInput from "./CustomFeatureInput";
 
-/** Composite key for per-feature strength state: "layer:id" */
-function featureKey(layer: number, id: number): string {
-  return `${layer}:${id}`;
-}
-
 interface FeaturePanelProps {
   features: Feature[];
-  strengths: Record<string, number>;
-  onStrengthChange: (layer: number, id: number, strength: number) => void;
+  strengths: Record<number, number>;
+  onStrengthChange: (id: number, strength: number) => void;
   loading: boolean;
-  customFeatures: { id: number; layer: number; strength: number }[];
-  onCustomAdd: (id: number, layer: number, strength: number) => void;
+  customFeatures: { id: number; strength: number }[];
+  onCustomAdd: (id: number, strength: number) => void;
   onCustomRemove: (idx: number) => void;
   onCustomChange: (idx: number, strength: number) => void;
 }
@@ -44,33 +39,17 @@ export default function FeaturePanel({
     );
   }
 
-  // Group features by layer
-  const byLayer = new Map<number, Feature[]>();
-  for (const f of features) {
-    const group = byLayer.get(f.layer) ?? [];
-    group.push(f);
-    byLayer.set(f.layer, group);
-  }
-  const layers = [...byLayer.keys()].sort((a, b) => a - b);
-
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Features</h3>
 
-      {layers.map((layer) => (
-        <div key={layer} className="flex flex-col gap-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            Layer {layer}
-          </h4>
-          {byLayer.get(layer)!.map((feature) => (
-            <FeatureSlider
-              key={featureKey(feature.layer, feature.id)}
-              label={`#${feature.id} ${feature.label}`}
-              value={strengths[featureKey(feature.layer, feature.id)] ?? 0}
-              onChange={(v) => onStrengthChange(feature.layer, feature.id, v)}
-            />
-          ))}
-        </div>
+      {features.map((feature) => (
+        <FeatureSlider
+          key={feature.id}
+          label={`#${feature.id} ${feature.label}`}
+          value={strengths[feature.id] ?? 0}
+          onChange={(v) => onStrengthChange(feature.id, v)}
+        />
       ))}
 
       {features.length === 0 && (

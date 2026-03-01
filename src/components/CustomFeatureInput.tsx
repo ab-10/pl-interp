@@ -4,8 +4,8 @@ import { useState } from "react";
 import FeatureSlider from "./FeatureSlider";
 
 interface CustomFeatureInputProps {
-  customFeatures: { id: number; layer: number; strength: number }[];
-  onAdd: (id: number, layer: number, strength: number) => void;
+  customFeatures: { id: number; strength: number }[];
+  onAdd: (id: number, strength: number) => void;
   onRemove: (idx: number) => void;
   onChange: (idx: number, strength: number) => void;
 }
@@ -17,13 +17,12 @@ export default function CustomFeatureInput({
   onChange,
 }: CustomFeatureInputProps) {
   const [featureIndex, setFeatureIndex] = useState("");
-  const [layer, setLayer] = useState(18);
   const [strength, setStrength] = useState(5);
 
   const handleAdd = () => {
     const idx = parseInt(featureIndex, 10);
     if (isNaN(idx) || idx < 0) return;
-    onAdd(idx, layer, strength);
+    onAdd(idx, strength);
     setFeatureIndex("");
     setStrength(5);
   };
@@ -35,19 +34,6 @@ export default function CustomFeatureInput({
       </h3>
 
       <div className="flex items-end gap-2">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500 dark:text-zinc-400">
-            Layer
-          </label>
-          <select
-            value={layer}
-            onChange={(e) => setLayer(Number(e.target.value))}
-            className="rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-          >
-            <option value={18}>18</option>
-            <option value={27}>27</option>
-          </select>
-        </div>
         <div className="flex flex-1 flex-col gap-1">
           <label className="text-xs text-zinc-500 dark:text-zinc-400">
             Feature ID
@@ -90,7 +76,7 @@ export default function CustomFeatureInput({
         <div key={idx} className="flex items-center gap-2">
           <div className="flex-1">
             <FeatureSlider
-              label={`L${cf.layer} #${cf.id}`}
+              label={`#${cf.id}`}
               value={cf.strength}
               onChange={(v) => onChange(idx, v)}
             />

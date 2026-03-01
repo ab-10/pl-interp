@@ -1,12 +1,10 @@
 export interface Feature {
   id: number;
-  layer: number;
   label: string;
 }
 
 export interface FeatureOverride {
   id: number;
-  layer: number;
   strength: number;
 }
 
@@ -23,5 +21,6 @@ export interface GenerateResponse {
 
 export interface BackendInfo {
   model: string;
-  saes: Record<string, string>;
+  sae: string;
+  layer: number;
 }
