@@ -176,7 +176,7 @@ export default function Home() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar */}
-        <aside className="flex w-72 flex-shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/50">
+        <aside className="flex w-80 flex-shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/50">
           <div className="flex flex-col gap-5 overflow-y-auto p-4">
             <PromptInput
               value={prompt}
