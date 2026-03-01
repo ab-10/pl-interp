@@ -28,6 +28,43 @@ VM access:
 | Feature labeling | **Mistral API** (`mistral-medium` or `mistral-small`) | Auto-interp pipeline |
 | Code prompt understanding | **Mistral API** or **Codestral API** | Suggest relevant features for a given prompt |
 
+## Custom SAE
+
+The community SAE (`tylercosgrove/mistral-7b-sparse-autoencoder-layer16`) failed to produce meaningful steering — typing features produced zero type annotations at any strength up to +500. Root causes: 80% dead features, TopK-128 constant sparsity, MLP-output hook point, and general-text training data.
+
+We trained a replacement BatchTopK SAE on `bigcode/starcoderdata` targeting the residual stream (`blocks.16.hook_resid_post`). Checkpoint: `~/checkpoints/code_sae_v1/` on the VM.
+
+### SAE Quality Comparison
+
+| Metric | Community SAE | Custom SAE |
+|---|---|---|
+| Dead features | 80% (104,821/131K) | **52%** (17,125/32K) |
+| L0 sparsity | 128 (constant) | **102 mean** (std=117, range 23–777) |
+| Decoder norms | 0.003–0.658 (237x range) | **1.0 (uniform)** |
+| Hook point | `hook_mlp_out` | **`hook_resid_post`** |
+| Architecture | TopK | **BatchTopK** |
+| Training data | Pile (general text) | **StarCoderData (code)** |
+| Training tokens | Unknown | 93M (target was 2–4B) |
+
+The 52% dead rate is above the <10% target due to the short training run. A longer run (2–4B tokens) would improve this. However, the alive features show strong property-specific signals, and the uniform decoder norms make steering strength comparable across features.
+
+### Discovered Features
+
+Contrastive analysis on typed/untyped, error-handling/simple, functional/imperative, recursive/iterative, and TypeScript/JavaScript pairs:
+
+| Property | Top Feature | Score | Positive Freq | Negative Freq | Steering Effect |
+|---|---|---|---|---|---|
+| TypeScript types | **304** | 0.743 | 100% | 0% | Generates typed TypeScript at +5 |
+| Verbose comments | **10177** | 0.389 | 100% | 0% | Shifts output structure and elaboration |
+| Recursion | **17862** | 0.289 | 100% | 33% | Structural code pattern feature |
+| Functional style | **14745** | 0.201 | 67% | 0% | Lambda/higher-order function detector |
+| Type annotations (Python) | **304** | 0.094 | 33% | 0% | Same feature as TS — genuine typing signal |
+| Error handling | **28883** | 0.956 | 0% | 100% | "Simple code" detector (inverse signal) |
+
+Feature 304 is the key result: it fires exclusively on typed code (TypeScript and typed Python) and, when steered at +5, causes the model to generate `function isPalindrome(input: string): boolean {` — actual type annotations. The old SAE's typing features never produced any at any strength.
+
+---
+
 # Milestones
 
 ## Basic Setup

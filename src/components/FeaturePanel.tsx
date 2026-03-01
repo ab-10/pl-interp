@@ -45,7 +45,7 @@ export default function FeaturePanel({
       {features.map((feature) => (
         <FeatureSlider
           key={feature.id}
-          label={feature.label}
+          label={`#${feature.id} ${feature.label}`}
           value={strengths[feature.id] ?? 0}
           onChange={(v) => onStrengthChange(feature.id, v)}
         />

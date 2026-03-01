@@ -20,14 +20,14 @@ export default function FeatureSlider({ label, value, onChange }: FeatureSliderP
         <span className="text-sm text-zinc-700 dark:text-zinc-300">{label}</span>
         <span className={`text-sm font-mono font-medium ${color}`}>
           {value > 0 ? "+" : ""}
-          {value.toFixed(0)}
+          {value.toFixed(1)}
         </span>
       </div>
       <input
         type="range"
-        min={-500}
-        max={500}
-        step={10}
+        min={-10}
+        max={10}
+        step={0.5}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         className="w-full accent-blue-600"

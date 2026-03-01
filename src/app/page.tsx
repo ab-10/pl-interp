@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Feature, FeatureOverride } from "@/lib/types";
-import { fetchFeatures, generateCompletion } from "@/lib/api";
+import { BackendInfo, Feature, FeatureOverride } from "@/lib/types";
+import { fetchFeatures, fetchInfo, generateCompletion } from "@/lib/api";
 import PromptInput from "@/components/PromptInput";
 import FeaturePanel from "@/components/FeaturePanel";
 import ResultsPanel from "@/components/ResultsPanel";
@@ -19,8 +19,12 @@ export default function Home() {
   const [featuresLoading, setFeaturesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [temperature, setTemperature] = useState(0.3);
+  const [info, setInfo] = useState<BackendInfo | null>(null);
 
   useEffect(() => {
+    fetchInfo()
+      .then(setInfo)
+      .catch(() => {});
     fetchFeatures()
       .then((feats) => {
         setFeatures(feats);
@@ -64,6 +68,12 @@ export default function Home() {
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Steer Mistral 7B code generation with SAE feature sliders
         </p>
+        {info && (
+          <div className="mt-1 flex gap-4 text-xs font-mono text-zinc-400 dark:text-zinc-500">
+            <span>Model: {info.model}</span>
+            <span>SAE: {info.sae}</span>
+          </div>
+        )}
       </header>
 
       {error && <div className="px-6 pt-4"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}

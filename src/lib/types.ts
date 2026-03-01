@@ -18,3 +18,8 @@ export interface GenerateResponse {
   baseline: string;
   steered: string;
 }
+
+export interface BackendInfo {
+  model: string;
+  sae: string;
+}

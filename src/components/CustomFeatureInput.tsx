@@ -17,14 +17,14 @@ export default function CustomFeatureInput({
   onChange,
 }: CustomFeatureInputProps) {
   const [featureIndex, setFeatureIndex] = useState("");
-  const [strength, setStrength] = useState(100);
+  const [strength, setStrength] = useState(5);
 
   const handleAdd = () => {
     const idx = parseInt(featureIndex, 10);
-    if (isNaN(idx) || idx < 0 || idx > 131071) return;
+    if (isNaN(idx) || idx < 0 || idx > 32767) return;
     onAdd(idx, strength);
     setFeatureIndex("");
-    setStrength(100);
+    setStrength(5);
   };
 
   const entries = Object.entries(customStrengths).map(([id, s]) => ({
@@ -41,12 +41,12 @@ export default function CustomFeatureInput({
       <div className="flex items-end gap-2">
         <div className="flex flex-1 flex-col gap-1">
           <label className="text-xs text-zinc-500 dark:text-zinc-400">
-            Index (0–131071)
+            Index (0–32767)
           </label>
           <input
             type="number"
             min={0}
-            max={131071}
+            max={32767}
             value={featureIndex}
             onChange={(e) => setFeatureIndex(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -60,9 +60,9 @@ export default function CustomFeatureInput({
           </label>
           <input
             type="number"
-            min={-500}
-            max={500}
-            step={10}
+            min={-10}
+            max={10}
+            step={0.5}
             value={strength}
             onChange={(e) => setStrength(parseFloat(e.target.value))}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}

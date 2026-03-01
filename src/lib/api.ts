@@ -1,4 +1,4 @@
-import { Feature, FeatureOverride, GenerateResponse } from "./types";
+import { BackendInfo, Feature, FeatureOverride, GenerateResponse } from "./types";
 
 const API_BASE = "/api/backend";
 
@@ -12,6 +12,14 @@ export async function fetchFeatures(): Promise<Feature[]> {
     id: Number(id),
     label,
   }));
+}
+
+export async function fetchInfo(): Promise<BackendInfo> {
+  const res = await fetch(`${API_BASE}/info`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch info: ${res.statusText}`);
+  }
+  return res.json();
 }
 
 export async function generateCompletion(

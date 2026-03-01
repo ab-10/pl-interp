@@ -10,17 +10,17 @@ from sae_lens import SAE
 from transformer_lens import HookedTransformer
 
 FEATURE_LABELS = {
-    # Typing features — validated (from typing experiment)
-    124809: "type annotations (cross-language) [verified]",
-    6133: "static typing style [verified]",
-    8019: "TypeScript type annotations",
-    28468: "explicit type signatures",
-    95915: "generic type parameters <T>",
-    70728: "Python type hints",
+    # Custom BatchTopK SAE — trained on starcoderdata, hook_resid_post
+    304: "Type annotations (TypeScript/Python)",
+    10177: "Verbose comments & documentation",
+    17862: "Recursive patterns",
+    14745: "Functional style (lambdas, map/filter)",
+    28883: "Code simplicity (inverse: error handling)",
+    10022: "Code structure & organization",
 }
 
 MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.1"
-SAE_ID = "tylercosgrove/mistral-7b-sparse-autoencoder-layer16"
+SAE_PATH = "/home/azureuser/checkpoints/code_sae_v1"
 MAX_NEW_TOKENS = 200
 
 
@@ -49,12 +49,8 @@ async def lifespan(app: FastAPI):
     model = HookedTransformer.from_pretrained_no_processing(MODEL_NAME, device="cuda", dtype=torch.float16)
     print(f"Model loaded. VRAM: {torch.cuda.memory_allocated() / 1e9:.1f} GB")
 
-    print("Loading SAE...")
-    sae = SAE.from_pretrained(
-        release=SAE_ID,
-        sae_id=".",
-    )[0]
-    sae = sae.to("cuda")
+    print(f"Loading SAE from {SAE_PATH}...")
+    sae = SAE.load_from_disk(SAE_PATH, device="cuda")
     hook_point = sae.cfg.metadata["hook_name"]
     print(f"SAE loaded (hook: {hook_point}). VRAM: {torch.cuda.memory_allocated() / 1e9:.1f} GB")
 
@@ -76,6 +72,13 @@ app.add_middleware(
 @app.get("/features")
 def get_features():
     return {str(k): v for k, v in FEATURE_LABELS.items()}
+
+
+@app.get("/info")
+def get_info():
+    # Extract last two path components for local paths
+    sae_short = "/".join(SAE_PATH.rstrip("/").split("/")[-2:])
+    return {"model": MODEL_NAME, "sae": sae_short}
 
 
 @app.post("/generate")
