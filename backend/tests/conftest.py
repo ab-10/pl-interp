@@ -8,19 +8,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-# ---------------------------------------------------------------------------
-# Blog-post feature IDs (from Tyler Cosgrove's SAE analysis)
-# ---------------------------------------------------------------------------
-PACIFIC_OCEAN_FEATURE = 79557
-BITTERNESS_FEATURE = 101594
-RHYMING_FEATURE = 131062
-
-# Existing verified features in the server registry
-REGISTRY_FEATURES = {124809, 6133, 8019, 28468, 95915, 70728}
-
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
-SAE_D_SAE = 131_072  # dictionary size of the SAE
+SAE_D_SAE = 32_768  # dictionary size of each layer SAE
+SAE_LAYERS = [18, 27]
 
 
 # ---------------------------------------------------------------------------
@@ -58,12 +49,10 @@ def mock_model():
     return m
 
 
-@pytest.fixture()
-def mock_sae():
-    """Return a lightweight mock that behaves like sae_lens.SAE."""
+def _make_mock_sae():
+    """Create a mock SAE for a single layer."""
     s = MagicMock()
     s.cfg.d_sae = SAE_D_SAE
-    s.cfg.metadata = {"hook_name": "blocks.16.hook_mlp_out"}
     # W_dec[idx].detach().clone() chain
     vec = MagicMock()
     vec.detach.return_value.clone.return_value = MagicMock()
@@ -73,14 +62,20 @@ def mock_sae():
 
 
 @pytest.fixture()
-def client(mock_model, mock_sae):
-    """FastAPI TestClient with mocked model & SAE globals — lifespan skipped."""
+def mock_saes():
+    """Return a dict of lightweight mock SAEs, one per layer."""
+    return {layer: _make_mock_sae() for layer in SAE_LAYERS}
+
+
+@pytest.fixture()
+def client(mock_model, mock_saes):
+    """FastAPI TestClient with mocked model & SAEs — lifespan skipped."""
     import backend.server as srv
 
     # Inject mocks into module-level globals
     srv.model = mock_model
-    srv.sae = mock_sae
-    srv.hook_point = "blocks.16.hook_mlp_out"
+    srv.saes = mock_saes
+    srv.hook_points = {layer: f"blocks.{layer}.hook_resid_post" for layer in SAE_LAYERS}
 
     # Replace the lifespan with a no-op so the TestClient doesn't try to
     # load the real model (which needs CUDA).
@@ -97,5 +92,5 @@ def client(mock_model, mock_sae):
     # Restore
     srv.app.router.lifespan_context = original_lifespan
     srv.model = None
-    srv.sae = None
-    srv.hook_point = None
+    srv.saes = {}
+    srv.hook_points = {}

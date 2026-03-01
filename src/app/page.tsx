@@ -8,14 +8,21 @@ import FeaturePanel from "@/components/FeaturePanel";
 import ResultsPanel from "@/components/ResultsPanel";
 import ErrorBanner from "@/components/ErrorBanner";
 
+/** Composite key for per-feature strength state: "layer:id" */
+function featureKey(layer: number, id: number): string {
+  return `${layer}:${id}`;
+}
+
 export default function Home() {
   const [prompt, setPrompt] = useState("def fibonacci(n):");
   const [features, setFeatures] = useState<Feature[]>([]);
-  const [strengths, setStrengths] = useState<Record<number, number>>({});
+  const [strengths, setStrengths] = useState<Record<string, number>>({});
   const [baseline, setBaseline] = useState<string | null>(null);
   const [steered, setSteered] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [customStrengths, setCustomStrengths] = useState<Record<number, number>>({});
+  const [customFeatures, setCustomFeatures] = useState<
+    { id: number; layer: number; strength: number }[]
+  >([]);
   const [featuresLoading, setFeaturesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [temperature, setTemperature] = useState(0.3);
@@ -28,8 +35,8 @@ export default function Home() {
     fetchFeatures()
       .then((feats) => {
         setFeatures(feats);
-        const initial: Record<number, number> = {};
-        feats.forEach((f) => (initial[f.id] = 0));
+        const initial: Record<string, number> = {};
+        feats.forEach((f) => (initial[featureKey(f.layer, f.id)] = 0));
         setStrengths(initial);
       })
       .catch((err) => {
@@ -43,10 +50,23 @@ export default function Home() {
     setLoading(true);
     setError(null);
 
-    const merged = { ...strengths, ...customStrengths };
-    const overrides: FeatureOverride[] = Object.entries(merged)
-      .filter(([, strength]) => strength !== 0)
-      .map(([id, strength]) => ({ id: Number(id), strength }));
+    const overrides: FeatureOverride[] = [];
+
+    // Registry features
+    for (const feat of features) {
+      const key = featureKey(feat.layer, feat.id);
+      const s = strengths[key] ?? 0;
+      if (s !== 0) {
+        overrides.push({ id: feat.id, layer: feat.layer, strength: s });
+      }
+    }
+
+    // Custom features
+    for (const cf of customFeatures) {
+      if (cf.strength !== 0) {
+        overrides.push({ id: cf.id, layer: cf.layer, strength: cf.strength });
+      }
+    }
 
     try {
       const result = await generateCompletion(prompt, overrides, temperature);
@@ -66,12 +86,15 @@ export default function Home() {
           Feature Steering
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Steer Mistral 7B code generation with SAE feature sliders
+          Steer Ministral 8B code generation with dual-layer SAE feature sliders
         </p>
         {info && (
           <div className="mt-1 flex gap-4 text-xs font-mono text-zinc-400 dark:text-zinc-500">
             <span>Model: {info.model}</span>
-            <span>SAE: {info.sae}</span>
+            {info.saes &&
+              Object.entries(info.saes).map(([layer, path]) => (
+                <span key={layer}>SAE L{layer}: {path}</span>
+              ))}
           </div>
         )}
       </header>
@@ -80,7 +103,7 @@ export default function Home() {
 
       <div className="flex flex-1 gap-0">
         {/* Left sidebar: prompt + features */}
-        <aside className="flex w-80 flex-shrink-0 flex-col gap-6 border-r border-zinc-200 p-6 dark:border-zinc-800">
+        <aside className="relative z-10 flex w-80 flex-shrink-0 flex-col gap-6 overflow-y-auto border-r border-zinc-200 p-6 dark:border-zinc-800">
           <PromptInput
             value={prompt}
             onChange={setPrompt}
@@ -108,23 +131,21 @@ export default function Home() {
           <FeaturePanel
             features={features}
             strengths={strengths}
-            onStrengthChange={(id, v) =>
-              setStrengths((prev) => ({ ...prev, [id]: v }))
+            onStrengthChange={(layer, id, v) =>
+              setStrengths((prev) => ({ ...prev, [featureKey(layer, id)]: v }))
             }
             loading={featuresLoading}
-            customStrengths={customStrengths}
-            onCustomAdd={(id, strength) =>
-              setCustomStrengths((prev) => ({ ...prev, [id]: strength }))
+            customFeatures={customFeatures}
+            onCustomAdd={(id, layer, strength) =>
+              setCustomFeatures((prev) => [...prev, { id, layer, strength }])
             }
-            onCustomRemove={(id) =>
-              setCustomStrengths((prev) => {
-                const next = { ...prev };
-                delete next[id];
-                return next;
-              })
+            onCustomRemove={(idx) =>
+              setCustomFeatures((prev) => prev.filter((_, i) => i !== idx))
             }
-            onCustomChange={(id, strength) =>
-              setCustomStrengths((prev) => ({ ...prev, [id]: strength }))
+            onCustomChange={(idx, strength) =>
+              setCustomFeatures((prev) =>
+                prev.map((cf, i) => (i === idx ? { ...cf, strength } : cf))
+              )
             }
           />
         </aside>

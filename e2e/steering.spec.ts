@@ -1,12 +1,51 @@
 import { test, expect } from "@playwright/test";
 
+/** Mock /features response matching the new dual-layer API shape. */
+const MOCK_FEATURES = {
+  "18": {
+    "100": "Type annotations (Python/TypeScript)",
+    "200": "Error handling patterns",
+  },
+  "27": {
+    "300": "Recursive patterns",
+  },
+};
+
+/** Mock /info response. */
+const MOCK_INFO = {
+  model: "mistralai/Ministral-8B-Instruct-2410",
+  saes: { "18": "8b_saes/layer18", "27": "8b_saes/layer27" },
+};
+
+/** Mock /generate response. */
+const MOCK_GENERATE = {
+  baseline: "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)",
+  steered: "def fibonacci(n: int) -> int:\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)",
+};
+
+/** Install mock API routes for all backend endpoints. */
+async function mockBackend(page: import("@playwright/test").Page) {
+  await page.route("**/api/backend/features", (route) =>
+    route.fulfill({ json: MOCK_FEATURES })
+  );
+  await page.route("**/api/backend/info", (route) =>
+    route.fulfill({ json: MOCK_INFO })
+  );
+  await page.route("**/api/backend/generate", (route) =>
+    route.fulfill({ json: MOCK_GENERATE })
+  );
+}
+
 test.describe("Feature Steering App", () => {
   test("page loads with header and UI elements", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+    await mockBackend(page);
+    await page.goto("/");
 
     // Header
     await expect(page.locator("h1")).toHaveText("Feature Steering");
-    await expect(page.getByText("Steer Mistral 7B code generation")).toBeVisible();
+    await expect(
+      page.getByText("Steer Ministral 8B code generation")
+    ).toBeVisible();
 
     // Prompt input with default value
     const textarea = page.locator("textarea");
@@ -14,102 +53,156 @@ test.describe("Feature Steering App", () => {
     await expect(textarea).toHaveValue("def fibonacci(n):");
 
     // Generate button
-    await expect(page.getByRole("button", { name: /Generate/ })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Generate/ })
+    ).toBeVisible();
   });
 
-  test("features load from backend", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+  test("model info displays correctly", async ({ page }) => {
+    await mockBackend(page);
+    await page.goto("/");
 
-    // Wait for features to load (skeleton disappears, labels appear)
-    await expect(page.getByText("recursion / recursive calls")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("list comprehension / generator expressions")).toBeVisible();
-    await expect(page.getByText("error handling / try-except blocks")).toBeVisible();
-    await expect(page.getByText("type annotations / type hints")).toBeVisible();
-    await expect(page.getByText("object-oriented / class definitions")).toBeVisible();
-
-    // All 5 sliders present
-    const sliders = page.locator('input[type="range"]');
-    await expect(sliders).toHaveCount(5);
+    await expect(
+      page.getByText("Model: mistralai/Ministral-8B-Instruct-2410")
+    ).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("SAE L18: 8b_saes/layer18")).toBeVisible();
+    await expect(page.getByText("SAE L27: 8b_saes/layer27")).toBeVisible();
   });
 
-  test("sliders default to 0 and can be adjusted", async ({ page }) => {
-    await page.goto("http://localhost:3000");
-    await expect(page.getByText("recursion / recursive calls")).toBeVisible({ timeout: 10000 });
+  test("features load grouped by layer", async ({ page }) => {
+    await mockBackend(page);
+    await page.goto("/");
 
-    // All sliders start at 0
+    // Layer headings
+    await expect(page.getByText("Layer 18")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Layer 27")).toBeVisible();
+
+    // Feature labels
+    await expect(
+      page.getByText("Type annotations (Python/TypeScript)")
+    ).toBeVisible();
+    await expect(page.getByText("Error handling patterns")).toBeVisible();
+    await expect(page.getByText("Recursive patterns")).toBeVisible();
+
+    // Temperature slider + 3 feature sliders = 4 range inputs
     const sliders = page.locator('input[type="range"]');
-    for (let i = 0; i < 5; i++) {
-      await expect(sliders.nth(i)).toHaveValue("0");
+    await expect(sliders).toHaveCount(4);
+  });
+
+  test("feature sliders default to 0 and can be adjusted", async ({
+    page,
+  }) => {
+    await mockBackend(page);
+    await page.goto("/");
+    await expect(page.getByText("Layer 18")).toBeVisible({ timeout: 5000 });
+
+    // Feature sliders (skip the temperature slider which is first)
+    const featureSliders = page.locator(
+      'input[type="range"][min="-10"][max="10"]'
+    );
+    const count = await featureSliders.count();
+    expect(count).toBe(3);
+
+    for (let i = 0; i < count; i++) {
+      await expect(featureSliders.nth(i)).toHaveValue("0");
     }
 
-    // Adjust first slider
-    await sliders.first().fill("5");
-    await expect(sliders.first()).toHaveValue("5");
+    // Adjust first feature slider
+    await featureSliders.first().fill("5");
+    await expect(featureSliders.first()).toHaveValue("5");
     await expect(page.getByText("+5.0")).toBeVisible();
   });
 
-  test("generate produces baseline and steered output", async ({ page }) => {
-    await page.goto("http://localhost:3000");
-    await expect(page.getByText("recursion / recursive calls")).toBeVisible({ timeout: 10000 });
+  test("generate produces diff output", async ({ page }) => {
+    await mockBackend(page);
+    await page.goto("/");
+    await expect(page.getByText("Layer 18")).toBeVisible({ timeout: 5000 });
 
     // Empty state shown before generating
-    await expect(page.getByText("Enter a prompt and click Generate")).toBeVisible();
+    await expect(
+      page.getByText("Enter a prompt and click Generate")
+    ).toBeVisible();
 
     // Click generate
     await page.getByRole("button", { name: /Generate/ }).click();
 
-    // Wait for results (model inference takes time)
-    await expect(page.getByText("Baseline")).toBeVisible({ timeout: 120000 });
-    await expect(page.getByText("Steered")).toBeVisible();
-
-    // Code blocks should contain the prompt text
-    const codeBlocks = page.locator("pre code");
-    await expect(codeBlocks).toHaveCount(2);
-    await expect(codeBlocks.first()).toContainText("def fibonacci");
-    await expect(codeBlocks.last()).toContainText("def fibonacci");
+    // Diff view should appear
+    await expect(page.getByText("Diff")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("pre")).toBeVisible();
   });
 
-  test("steered output differs when feature strength is non-zero", async ({ page }) => {
-    await page.goto("http://localhost:3000");
-    await expect(page.getByText("recursion / recursive calls")).toBeVisible({ timeout: 10000 });
+  test("custom feature input has layer selector", async ({ page }) => {
+    await mockBackend(page);
+    await page.goto("/");
+    await expect(page.getByText("Custom Features")).toBeVisible({
+      timeout: 5000,
+    });
 
-    // Set type hints feature to +8
-    const sliders = page.locator('input[type="range"]');
-    await sliders.nth(3).fill("8"); // type annotations slider
+    // Layer dropdown
+    const layerSelect = page.locator("select");
+    await expect(layerSelect).toBeVisible();
+    await expect(layerSelect).toHaveValue("18");
 
-    // Change prompt to something where steering has visible effect
-    await page.locator("textarea").fill("def add(a, b):");
+    // Can switch to layer 27
+    await layerSelect.selectOption("27");
+    await expect(layerSelect).toHaveValue("27");
 
-    // Generate
-    await page.getByRole("button", { name: /Generate/ }).click();
+    // Feature ID input
+    const featureInput = page.locator('input[placeholder="e.g. 1234"]');
+    await expect(featureInput).toBeVisible();
+  });
 
-    // Wait for results
-    await expect(page.getByText("Baseline")).toBeVisible({ timeout: 120000 });
+  test("can add and remove custom features", async ({ page }) => {
+    await mockBackend(page);
+    await page.goto("/");
+    await expect(page.getByText("Custom Features")).toBeVisible({
+      timeout: 5000,
+    });
 
-    const codeBlocks = page.locator("pre code");
-    await expect(codeBlocks).toHaveCount(2);
+    // Add a custom feature
+    await page.locator('input[placeholder="e.g. 1234"]').fill("42");
+    await page.getByRole("button", { name: "Add" }).click();
 
-    const baseline = await codeBlocks.first().textContent();
-    const steered = await codeBlocks.last().textContent();
+    // Custom feature slider appears with layer prefix
+    await expect(page.getByText("L18 #42")).toBeVisible();
 
-    // Both should contain the prompt
-    expect(baseline).toContain("def add");
-    expect(steered).toContain("def add");
-
-    // Steered should differ from baseline
-    expect(steered).not.toEqual(baseline);
+    // Remove it
+    await page.getByTitle("Remove").click();
+    await expect(page.getByText("L18 #42")).not.toBeVisible();
   });
 
   test("error banner shows when backend is unreachable", async ({ page }) => {
-    // Block backend requests by navigating with a broken API
-    await page.route("**/features", (route) => route.abort());
-    await page.goto("http://localhost:3000");
+    // Block backend requests
+    await page.route("**/api/backend/features", (route) => route.abort());
+    await page.route("**/api/backend/info", (route) => route.abort());
+    await page.goto("/");
 
     // Error banner should appear
-    await expect(page.getByText(/Cannot connect to backend/)).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByText(/Cannot connect to backend/)
+    ).toBeVisible({ timeout: 10000 });
 
     // Dismiss it
     await page.getByRole("button", { name: /Dismiss/ }).click();
-    await expect(page.getByText(/Cannot connect to backend/)).not.toBeVisible();
+    await expect(
+      page.getByText(/Cannot connect to backend/)
+    ).not.toBeVisible();
+  });
+
+  test("no labeled features message shows with empty registry", async ({
+    page,
+  }) => {
+    // Return empty feature labels
+    await page.route("**/api/backend/features", (route) =>
+      route.fulfill({ json: { "18": {}, "27": {} } })
+    );
+    await page.route("**/api/backend/info", (route) =>
+      route.fulfill({ json: MOCK_INFO })
+    );
+    await page.goto("/");
+
+    await expect(
+      page.getByText("No labeled features yet")
+    ).toBeVisible({ timeout: 5000 });
   });
 });

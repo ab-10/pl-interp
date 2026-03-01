@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from .conftest import REGISTRY_FEATURES, SAE_D_SAE
+from .conftest import SAE_D_SAE, SAE_LAYERS
 
 
 # ── GET /features ──────────────────────────────────────────────────────────
@@ -19,18 +19,30 @@ class TestGetFeatures:
         resp = client.get("/features")
         assert resp.status_code == 200
 
-    def test_returns_all_registry_entries(self, client):
+    def test_returns_per_layer_dict(self, client):
         data = client.get("/features").json()
-        returned_ids = {int(k) for k in data.keys()}
-        assert returned_ids == REGISTRY_FEATURES
+        for layer in SAE_LAYERS:
+            assert str(layer) in data
 
-    def test_keys_are_strings(self, client):
+    def test_layer_keys_are_strings(self, client):
         data = client.get("/features").json()
         assert all(isinstance(k, str) for k in data.keys())
 
-    def test_values_are_strings(self, client):
+    def test_feature_values_are_strings(self, client):
         data = client.get("/features").json()
-        assert all(isinstance(v, str) for v in data.values())
+        for layer_data in data.values():
+            assert all(isinstance(v, str) for v in layer_data.values())
+
+
+# ── GET /info ──────────────────────────────────────────────────────────────
+
+
+class TestGetInfo:
+    def test_returns_model_and_saes(self, client):
+        data = client.get("/info").json()
+        assert "model" in data
+        assert "saes" in data
+        assert isinstance(data["saes"], dict)
 
 
 # ── POST /generate — request validation ────────────────────────────────────
@@ -70,7 +82,7 @@ class TestBaselineGeneration:
             "/generate",
             json={
                 "prompt": "def fib(n):",
-                "features": [{"id": 6133, "strength": 0}],
+                "features": [{"id": 0, "layer": 18, "strength": 0}],
             },
         ).json()
         assert data["baseline"] == data["steered"]
@@ -92,25 +104,39 @@ class TestSteeredGeneration:
             "/generate",
             json={
                 "prompt": "hello",
-                "features": [{"id": 6133, "strength": 100}],
+                "features": [{"id": 0, "layer": 18, "strength": 100}],
             },
         )
         # model.generate called once for baseline, once inside hooks context
         assert mock_model.generate.call_count == 2
 
-    def test_multiple_features_all_applied(self, client, mock_model):
+    def test_multiple_features_same_layer(self, client, mock_model):
         client.post(
             "/generate",
             json={
                 "prompt": "hello",
                 "features": [
-                    {"id": 6133, "strength": 100},
-                    {"id": 8019, "strength": -50},
+                    {"id": 0, "layer": 18, "strength": 100},
+                    {"id": 1, "layer": 18, "strength": -50},
                 ],
             },
         )
-        # Both features active → steered path taken
         assert mock_model.generate.call_count == 2
+        mock_model.hooks.assert_called_once()
+
+    def test_features_across_layers(self, client, mock_model):
+        client.post(
+            "/generate",
+            json={
+                "prompt": "hello",
+                "features": [
+                    {"id": 0, "layer": 18, "strength": 100},
+                    {"id": 0, "layer": 27, "strength": -50},
+                ],
+            },
+        )
+        assert mock_model.generate.call_count == 2
+        # hooks called with list of two (hook_point, hook_fn) tuples
         mock_model.hooks.assert_called_once()
 
     def test_negative_strength_accepted(self, client):
@@ -118,7 +144,7 @@ class TestSteeredGeneration:
             "/generate",
             json={
                 "prompt": "hello",
-                "features": [{"id": 6133, "strength": -200}],
+                "features": [{"id": 0, "layer": 18, "strength": -200}],
             },
         )
         assert resp.status_code == 200
@@ -128,7 +154,7 @@ class TestSteeredGeneration:
             "/generate",
             json={
                 "prompt": "hello",
-                "features": [{"id": 6133, "strength": 500}],
+                "features": [{"id": 0, "layer": 27, "strength": 500}],
             },
         )
         assert resp.status_code == 200
@@ -143,18 +169,18 @@ class TestFeatureIdValidation:
             "/generate",
             json={
                 "prompt": "hello",
-                "features": [{"id": -1, "strength": 100}],
+                "features": [{"id": -1, "layer": 18, "strength": 100}],
             },
         )
         assert resp.status_code == 500
 
     def test_feature_id_at_boundary_rejected(self, client):
-        """Feature ID == d_sae (131072) is out of range."""
+        """Feature ID == d_sae is out of range."""
         resp = client.post(
             "/generate",
             json={
                 "prompt": "hello",
-                "features": [{"id": SAE_D_SAE, "strength": 100}],
+                "features": [{"id": SAE_D_SAE, "layer": 18, "strength": 100}],
             },
         )
         assert resp.status_code == 500
@@ -164,7 +190,7 @@ class TestFeatureIdValidation:
             "/generate",
             json={
                 "prompt": "hello",
-                "features": [{"id": SAE_D_SAE - 1, "strength": 100}],
+                "features": [{"id": SAE_D_SAE - 1, "layer": 18, "strength": 100}],
             },
         )
         assert resp.status_code == 200
@@ -174,7 +200,7 @@ class TestFeatureIdValidation:
             "/generate",
             json={
                 "prompt": "hello",
-                "features": [{"id": 0, "strength": 100}],
+                "features": [{"id": 0, "layer": 27, "strength": 100}],
             },
         )
         assert resp.status_code == 200

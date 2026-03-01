@@ -7,11 +7,15 @@ export async function fetchFeatures(): Promise<Feature[]> {
   if (!res.ok) {
     throw new Error(`Failed to fetch features: ${res.statusText}`);
   }
-  const data: Record<string, string> = await res.json();
-  return Object.entries(data).map(([id, label]) => ({
-    id: Number(id),
-    label,
-  }));
+  // Response shape: { "18": { "304": "label", ... }, "27": { ... } }
+  const data: Record<string, Record<string, string>> = await res.json();
+  const features: Feature[] = [];
+  for (const [layer, labels] of Object.entries(data)) {
+    for (const [id, label] of Object.entries(labels)) {
+      features.push({ id: Number(id), layer: Number(layer), label });
+    }
+  }
+  return features;
 }
 
 export async function fetchInfo(): Promise<BackendInfo> {
