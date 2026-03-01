@@ -326,12 +326,24 @@ def _resample_dead_features(
     d_sae: int,
     device: str,
 ) -> None:
-    """Resample dead encoder/decoder rows from high-loss inputs."""
+    """Resample dead encoder/decoder rows from high-loss inputs.
+
+    Caps resampling to MAX_RESAMPLE features per call (longest-dead first)
+    and scales init to 0.1x to avoid destabilizing established features.
+    """
+    MAX_RESAMPLE = 1024
+
     dead_mask = (step - last_fired) >= threshold
     dead_indices = dead_mask.nonzero(as_tuple=True)[0]
 
     if len(dead_indices) == 0:
         return
+
+    # Cap: pick the longest-dead features first
+    if len(dead_indices) > MAX_RESAMPLE:
+        dead_ages = step - last_fired[dead_indices]
+        _, oldest = dead_ages.topk(MAX_RESAMPLE)
+        dead_indices = dead_indices[oldest]
 
     # Find high-loss inputs
     with torch.no_grad():
@@ -350,8 +362,9 @@ def _resample_dead_features(
     sample_indices = torch.randint(0, high_loss_inputs.shape[0], (n_dead,), device=device)
     sampled = high_loss_inputs[sample_indices]  # (n_dead, d_model)
 
-    # Normalize to unit vectors
+    # Normalize to unit vectors, then scale down to 0.1x so they warm up gradually
     sampled = sampled / (sampled.norm(dim=-1, keepdim=True) + 1e-8)
+    sampled = sampled * 0.1
 
     # Re-init encoder rows and decoder columns
     with torch.no_grad():
