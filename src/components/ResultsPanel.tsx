@@ -13,7 +13,7 @@ export default function ResultsPanel({ baseline, steered, loading }: ResultsPane
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-orange-500" />
           <p className="text-sm text-zinc-500">Generating...</p>
         </div>
       </div>
@@ -23,7 +23,7 @@ export default function ResultsPanel({ baseline, steered, loading }: ResultsPane
   if (baseline === null && steered === null) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">
+        <p className="text-sm text-zinc-500">
           Enter a prompt and click Generate to see results.
         </p>
       </div>
@@ -35,13 +35,13 @@ export default function ResultsPanel({ baseline, steered, loading }: ResultsPane
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex items-baseline gap-3">
-        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <h3 className="text-sm font-medium text-zinc-700">
           Diff
         </h3>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500">
-          <span className="text-red-400">baseline</span>
+        <p className="text-xs text-zinc-500">
+          <span className="text-red-500">baseline</span>
           {" → "}
-          <span className="text-green-400">steered</span>
+          <span className="text-green-600">steered</span>
         </p>
       </div>
       <pre className="flex-1 overflow-auto rounded-lg bg-zinc-900 p-4 text-sm leading-relaxed">

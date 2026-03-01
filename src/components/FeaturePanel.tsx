@@ -32,10 +32,10 @@ export default function FeaturePanel({
   if (loading) {
     return (
       <div className="flex flex-col gap-3">
-        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Features</h3>
+        <h3 className="text-sm font-medium text-zinc-700">Features</h3>
         {[...Array(2)].map((_, i) => (
           <div key={i} className="flex flex-col gap-1 animate-pulse">
-            <div className="h-8 w-full rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-8 w-full rounded bg-zinc-200" />
           </div>
         ))}
       </div>
@@ -59,7 +59,7 @@ export default function FeaturePanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Features</h3>
+      <h3 className="text-sm font-medium text-zinc-700">Features</h3>
 
       {allFeatures.map((feature) => {
         const isActive = feature.id === activeFeatureId;
@@ -71,8 +71,8 @@ export default function FeaturePanel({
                 onClick={() => onToggle(feature.id)}
                 className={`flex-1 rounded px-3 py-2 text-left text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-blue-600 text-white"
-                    : "bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    ? "bg-orange-500 text-white"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
                 }`}
               >
                 {feature.label} <span className="font-mono text-xs opacity-50">#{feature.id}</span>
@@ -99,7 +99,7 @@ export default function FeaturePanel({
       })}
 
       {allFeatures.length === 0 && (
-        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+        <p className="text-xs text-zinc-500">
           No features available. Add a custom feature below.
         </p>
       )}
@@ -112,12 +112,12 @@ export default function FeaturePanel({
           onChange={(e) => setNewId(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           placeholder="Feature ID"
-          className="flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+          className="flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900"
         />
         <button
           onClick={handleAdd}
           disabled={newId === "" || isNaN(parseInt(newId, 10))}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+          className="rounded bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-40"
         >
           Add
         </button>

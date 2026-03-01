@@ -55,7 +55,7 @@ export default function LayerAttributionChart({
 
   return (
     <div data-testid="layer-attribution">
-      <h3 className="text-sm font-medium text-zinc-300 mb-2">
+      <h3 className="text-sm font-medium text-zinc-700 mb-2">
         Layer Attribution for Feature {featureId} at &ldquo;{token}&rdquo;
       </h3>
 
@@ -71,7 +71,7 @@ export default function LayerAttributionChart({
           y1={0}
           x2={centerX}
           y2={chartHeight - 20}
-          stroke="#71717a"
+          stroke="#d4d4d8"
           strokeWidth={1}
           strokeDasharray="2,2"
         />
@@ -106,7 +106,7 @@ export default function LayerAttributionChart({
               <text
                 x={LABEL_WIDTH - 8}
                 y={y + BAR_HEIGHT / 2 + 4}
-                fill={isMinimal ? "#52525b" : "#a1a1aa"}
+                fill={isMinimal ? "#a1a1aa" : "#52525b"}
                 fontSize={11}
                 textAnchor="end"
               >
@@ -120,7 +120,7 @@ export default function LayerAttributionChart({
                   y={y}
                   width={attnWidth}
                   height={BAR_HEIGHT}
-                  fill="#3b82f6"
+                  fill="#f97316"
                   opacity={isMinimal ? 0.3 : 0.9}
                   rx={2}
                 />
@@ -133,7 +133,7 @@ export default function LayerAttributionChart({
                   y={y}
                   width={mlpWidth}
                   height={BAR_HEIGHT}
-                  fill="#f59e0b"
+                  fill="#FFD800"
                   opacity={isMinimal ? 0.3 : 0.9}
                   rx={2}
                 />
@@ -148,7 +148,7 @@ export default function LayerAttributionChart({
           data-final-value={finalCumulative.toFixed(4)}
           points={cumPoints.join(" ")}
           fill="none"
-          stroke="#f43f5e"
+          stroke="#FA500F"
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -158,7 +158,7 @@ export default function LayerAttributionChart({
           <text
             x={centerX + finalCumulative * cumScale + 4}
             y={TOP_MARGIN + (numLayers - 1) * (BAR_HEIGHT + 4) + BAR_HEIGHT / 2 + 4}
-            fill="#f43f5e"
+            fill="#FA500F"
             fontSize={11}
           >
             {finalCumulative.toFixed(1)}
@@ -167,12 +167,12 @@ export default function LayerAttributionChart({
 
         {/* Legend */}
         <g transform={`translate(${LABEL_WIDTH}, ${chartHeight - 16})`}>
-          <rect x={0} y={0} width={10} height={10} fill="#3b82f6" rx={2} />
-          <text x={14} y={9} fill="#a1a1aa" fontSize={10}>Attn</text>
-          <rect x={50} y={0} width={10} height={10} fill="#f59e0b" rx={2} />
-          <text x={64} y={9} fill="#a1a1aa" fontSize={10}>MLP</text>
-          <line x1={100} y1={5} x2={120} y2={5} stroke="#f43f5e" strokeWidth={2} />
-          <text x={124} y={9} fill="#a1a1aa" fontSize={10}>Cumulative</text>
+          <rect x={0} y={0} width={10} height={10} fill="#f97316" rx={2} />
+          <text x={14} y={9} fill="#52525b" fontSize={10}>Attn</text>
+          <rect x={50} y={0} width={10} height={10} fill="#FFD800" rx={2} />
+          <text x={64} y={9} fill="#52525b" fontSize={10}>MLP</text>
+          <line x1={100} y1={5} x2={120} y2={5} stroke="#FA500F" strokeWidth={2} />
+          <text x={124} y={9} fill="#52525b" fontSize={10}>Cumulative</text>
         </g>
       </svg>
     </div>

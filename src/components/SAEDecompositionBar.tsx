@@ -37,9 +37,9 @@ export default function SAEDecompositionBar({
   if (total === 0) {
     return (
       <div data-testid="sae-decomposition">
-        <h3 className="text-sm font-medium text-zinc-300 mb-2">
+        <h3 className="text-sm font-medium text-zinc-700 mb-2">
           SAE Decomposition at{" "}
-          <span data-testid="detail-token-label" className="font-mono text-yellow-400">
+          <span data-testid="detail-token-label" className="font-mono text-orange-600">
             &ldquo;{token}&rdquo;
           </span>
         </h3>
@@ -50,9 +50,9 @@ export default function SAEDecompositionBar({
 
   return (
     <div data-testid="sae-decomposition">
-      <h3 className="text-sm font-medium text-zinc-300 mb-2">
+      <h3 className="text-sm font-medium text-zinc-700 mb-2">
         SAE Decomposition at{" "}
-        <span data-testid="detail-token-label" className="font-mono text-yellow-400">
+        <span data-testid="detail-token-label" className="font-mono text-orange-600">
           &ldquo;{token}&rdquo;
         </span>
       </h3>
@@ -76,9 +76,9 @@ export default function SAEDecompositionBar({
                   ? "transparent"
                   : SEGMENT_COLORS[i % SEGMENT_COLORS.length],
                 backgroundImage: isHighlighted
-                  ? `repeating-linear-gradient(45deg, #22c55e, #22c55e 4px, #16a34a 4px, #16a34a 8px)`
+                  ? `repeating-linear-gradient(45deg, #f97316, #f97316 4px, #ea580c 4px, #ea580c 8px)`
                   : undefined,
-                borderRight: "1px solid rgba(0,0,0,0.2)",
+                borderRight: "1px solid rgba(255,255,255,0.3)",
               }}
               title={`Feature ${entry.feature_id}: ${entry.label} (${entry.activation.toFixed(3)})`}
             >
@@ -93,11 +93,11 @@ export default function SAEDecompositionBar({
         {/* Reconstruction error segment */}
         {reconstructionError > 0 && (
           <div
-            className="flex items-center justify-center text-[10px] text-zinc-400"
+            className="flex items-center justify-center text-[10px] text-zinc-500"
             style={{
               width: `${(reconstructionError / total) * 100}%`,
               minWidth: "2px",
-              backgroundColor: "#52525b", // zinc-600
+              backgroundColor: "#d4d4d8", // zinc-300
             }}
             title={`Reconstruction error: ${reconstructionError.toFixed(3)}`}
           >
@@ -116,21 +116,21 @@ export default function SAEDecompositionBar({
                 className="w-3 h-3 rounded-sm flex-shrink-0"
                 style={{
                   backgroundColor: isHighlighted
-                    ? "#22c55e"
+                    ? "#f97316"
                     : SEGMENT_COLORS[i % SEGMENT_COLORS.length],
                 }}
               />
-              <span className="text-zinc-400 font-mono">#{entry.feature_id}</span>
-              <span className="text-zinc-300 truncate">{entry.label}</span>
-              <span className="text-zinc-500 ml-auto">{entry.activation.toFixed(2)}</span>
+              <span className="text-zinc-500 font-mono">#{entry.feature_id}</span>
+              <span className="text-zinc-700 truncate">{entry.label}</span>
+              <span className="text-zinc-400 ml-auto">{entry.activation.toFixed(2)}</span>
             </div>
           );
         })}
         {reconstructionError > 0 && (
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm flex-shrink-0 bg-zinc-600" />
-            <span className="text-zinc-400">recon. error</span>
-            <span className="text-zinc-500 ml-auto">
+            <div className="w-3 h-3 rounded-sm flex-shrink-0 bg-zinc-300" />
+            <span className="text-zinc-500">recon. error</span>
+            <span className="text-zinc-400 ml-auto">
               {reconstructionError.toFixed(2)}
             </span>
           </div>
