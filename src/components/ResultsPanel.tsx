@@ -1,5 +1,7 @@
 "use client";
 
+import { diffLines, Change } from "diff";
+
 interface ResultsPanelProps {
   baseline: string | null;
   steered: string | null;
@@ -28,20 +30,51 @@ export default function ResultsPanel({ baseline, steered, loading }: ResultsPane
     );
   }
 
+  const changes = diffLines(baseline ?? "", steered ?? "");
+
   return (
-    <div className="grid h-full grid-cols-2 gap-4">
-      <div className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Baseline</h3>
-        <pre className="flex-1 overflow-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-          <code>{baseline}</code>
-        </pre>
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex items-baseline gap-3">
+        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Diff
+        </h3>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          <span className="text-red-400">baseline</span>
+          {" → "}
+          <span className="text-green-400">steered</span>
+        </p>
       </div>
-      <div className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Steered</h3>
-        <pre className="flex-1 overflow-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-          <code>{steered}</code>
-        </pre>
-      </div>
+      <pre className="flex-1 overflow-auto rounded-lg bg-zinc-900 p-4 text-sm leading-relaxed">
+        <code>
+          {changes.map((change: Change, i: number) => {
+            const lines = change.value.replace(/\n$/, "").split("\n");
+            return lines.map((line: string, j: number) => {
+              if (change.added) {
+                return (
+                  <div key={`${i}-${j}`} className="bg-green-900/40 text-green-300">
+                    <span className="mr-2 inline-block w-4 select-none text-green-500">+</span>
+                    {line}
+                  </div>
+                );
+              }
+              if (change.removed) {
+                return (
+                  <div key={`${i}-${j}`} className="bg-red-900/40 text-red-300">
+                    <span className="mr-2 inline-block w-4 select-none text-red-500">-</span>
+                    {line}
+                  </div>
+                );
+              }
+              return (
+                <div key={`${i}-${j}`} className="text-zinc-400">
+                  <span className="mr-2 inline-block w-4 select-none text-zinc-600">&nbsp;</span>
+                  {line}
+                </div>
+              );
+            });
+          })}
+        </code>
+      </pre>
     </div>
   );
 }
