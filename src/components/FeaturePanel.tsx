@@ -2,12 +2,17 @@
 
 import { Feature } from "@/lib/types";
 import FeatureSlider from "./FeatureSlider";
+import CustomFeatureInput from "./CustomFeatureInput";
 
 interface FeaturePanelProps {
   features: Feature[];
   strengths: Record<number, number>;
   onStrengthChange: (id: number, strength: number) => void;
   loading: boolean;
+  customStrengths: Record<number, number>;
+  onCustomAdd: (id: number, strength: number) => void;
+  onCustomRemove: (id: number) => void;
+  onCustomChange: (id: number, strength: number) => void;
 }
 
 export default function FeaturePanel({
@@ -15,6 +20,10 @@ export default function FeaturePanel({
   strengths,
   onStrengthChange,
   loading,
+  customStrengths,
+  onCustomAdd,
+  onCustomRemove,
+  onCustomChange,
 }: FeaturePanelProps) {
   if (loading) {
     return (
@@ -41,6 +50,15 @@ export default function FeaturePanel({
           onChange={(v) => onStrengthChange(feature.id, v)}
         />
       ))}
+
+      <hr className="border-zinc-200 dark:border-zinc-700" />
+
+      <CustomFeatureInput
+        customStrengths={customStrengths}
+        onAdd={onCustomAdd}
+        onRemove={onCustomRemove}
+        onChange={onCustomChange}
+      />
     </div>
   );
 }

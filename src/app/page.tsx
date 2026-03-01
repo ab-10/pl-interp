@@ -15,8 +15,10 @@ export default function Home() {
   const [baseline, setBaseline] = useState<string | null>(null);
   const [steered, setSteered] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [customStrengths, setCustomStrengths] = useState<Record<number, number>>({});
   const [featuresLoading, setFeaturesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [temperature, setTemperature] = useState(0.3);
 
   useEffect(() => {
     fetchFeatures()
@@ -37,12 +39,13 @@ export default function Home() {
     setLoading(true);
     setError(null);
 
-    const overrides: FeatureOverride[] = Object.entries(strengths).map(
+    const merged = { ...strengths, ...customStrengths };
+    const overrides: FeatureOverride[] = Object.entries(merged).map(
       ([id, strength]) => ({ id: Number(id), strength })
     );
 
     try {
-      const result = await generateCompletion(prompt, overrides);
+      const result = await generateCompletion(prompt, overrides, temperature);
       setBaseline(result.baseline);
       setSteered(result.steered);
     } catch (err) {
@@ -74,6 +77,24 @@ export default function Home() {
             onGenerate={handleGenerate}
             loading={loading}
           />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Temperature: {temperature.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className="w-full accent-blue-600"
+            />
+            <div className="mt-1 flex justify-between text-xs text-zinc-400">
+              <span>0 (greedy)</span>
+              <span>1.0</span>
+            </div>
+          </div>
           <FeaturePanel
             features={features}
             strengths={strengths}
@@ -81,6 +102,20 @@ export default function Home() {
               setStrengths((prev) => ({ ...prev, [id]: v }))
             }
             loading={featuresLoading}
+            customStrengths={customStrengths}
+            onCustomAdd={(id, strength) =>
+              setCustomStrengths((prev) => ({ ...prev, [id]: strength }))
+            }
+            onCustomRemove={(id) =>
+              setCustomStrengths((prev) => {
+                const next = { ...prev };
+                delete next[id];
+                return next;
+              })
+            }
+            onCustomChange={(id, strength) =>
+              setCustomStrengths((prev) => ({ ...prev, [id]: strength }))
+            }
           />
         </aside>
 
