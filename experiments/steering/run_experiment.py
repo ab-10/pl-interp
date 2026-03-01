@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -22,6 +23,17 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from experiments import config
+
+try:
+    import wandb as _wandb
+except ImportError:
+    _wandb = None
+
+
+def _wandb_enabled() -> bool:
+    if _wandb is None:
+        return False
+    return os.environ.get("WANDB_DISABLED", "").lower() not in ("true", "1")
 from experiments.datasets.load_humaneval import load_humaneval
 from experiments.evaluation.executor import execute_code
 from experiments.evaluation.extractor import extract_code
@@ -164,6 +176,22 @@ def run_experiment(
     """
     t_start = time.time()
 
+    # --- wandb ---
+    use_wandb = _wandb_enabled()
+    if use_wandb:
+        _wandb.init(
+            project=config.WANDB_PROJECT,
+            entity=config.WANDB_ENTITY,
+            name=f"{experiment_name}_shard_{shard}",
+            config={
+                "experiment_name": experiment_name,
+                "alphas": alphas, "steer_layer": steer_layer,
+                "shard": shard, "num_shards": num_shards,
+                "include_random_controls": include_random_controls,
+            },
+        )
+        print("  wandb: logging enabled")
+
     # --- Load model + tokenizer ---
     print(f"Loading model: {model_path}")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -242,6 +270,13 @@ def run_experiment(
     baseline_pass = sum(1 for r in records if r.passed)
     print(f"Baseline: {baseline_pass}/{total_tasks} passed")
 
+    if use_wandb:
+        _wandb.log({
+            "baseline_pass_rate": baseline_pass / max(total_tasks, 1),
+            "baseline_passed": baseline_pass,
+            "baseline_n": total_tasks,
+        })
+
     # === Steered conditions: direction x alpha ===
     for dir_idx, (dir_name, direction) in enumerate(directions):
         for alpha in alphas:
@@ -301,7 +336,15 @@ def run_experiment(
                 1 for r in records
                 if r.variant_id == condition and r.passed
             )
+            steered_rate = steered_pass / max(total_tasks, 1)
+            baseline_rate = baseline_pass / max(total_tasks, 1)
             print(f"  {condition}: {steered_pass}/{total_tasks} passed")
+
+            if use_wandb:
+                _wandb.log({
+                    f"pass_rate/{condition}": steered_rate,
+                    f"delta/{condition}": steered_rate - baseline_rate,
+                })
 
     # === Save all records ===
     print(f"\nSaving {len(records)} records to {output_path}")
@@ -321,6 +364,14 @@ def run_experiment(
     print(f"  Overall pass rate: {pass_count}/{len(records)} ({100*pass_count/len(records):.1f}%)")
     print(f"  Failure breakdown: {categories}")
     print(f"  Elapsed: {elapsed:.1f}s")
+
+    if use_wandb:
+        _wandb.log({
+            "total_records": len(records),
+            "overall_pass_rate": pass_count / max(len(records), 1),
+            "elapsed_s": elapsed,
+        })
+        _wandb.finish()
 
     return output_path
 

@@ -3,14 +3,14 @@
 from pathlib import Path
 
 # --- Model ---
-MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.3"
+MODEL_ID = "mistralai/Ministral-8B-Instruct-2410"
 MODEL_DTYPE = "float16"
 MODEL_HIDDEN_DIM = 4096
-MODEL_NUM_LAYERS = 32
+MODEL_NUM_LAYERS = 36
 
 # --- Activation capture ---
-# Layer 16 = index 17 in output_hidden_states (index 0 = embeddings)
-CAPTURE_LAYER = 16
+# Layer 18 (50% of 36) = index 19 in output_hidden_states (index 0 = embeddings)
+CAPTURE_LAYER = 18
 HIDDEN_STATES_INDEX = CAPTURE_LAYER + 1  # off-by-one: hidden_states[0] = embeddings
 
 # --- Generation ---
@@ -79,9 +79,14 @@ STEERING_NUM_FEATURES = 3
 STEERING_ALPHAS = [1.0, 3.0, 5.0, -3.0]
 STEERING_TASKS = 164  # HumanEval only for steering
 
+# --- Weights & Biases ---
+WANDB_PROJECT = "pl-interp"
+WANDB_ENTITY = None  # override via WANDB_ENTITY env var
+
 # --- Storage ---
 # NVMe scratch on VM (ephemeral, 7TB, fast sequential writes)
-SCRATCH_DIR = Path("/scratch")
+# Model-specific subdirectory to allow multiple model runs
+SCRATCH_DIR = Path("/scratch/ministral-8b")
 GENERATIONS_DIR = SCRATCH_DIR / "generations"
 ACTIVATIONS_DIR = SCRATCH_DIR / "activations"
 SAE_DIR = SCRATCH_DIR / "sae"

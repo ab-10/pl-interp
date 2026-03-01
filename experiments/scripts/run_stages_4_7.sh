@@ -16,6 +16,14 @@ echo "$(date): Starting stages 4-7"
 echo "Generations: $(ls /scratch/generations/shard_*.jsonl 2>/dev/null | wc -l) shards"
 echo ""
 
+# --- Ensure wandb is installed ---
+if ! python3 -c "import wandb" 2>/dev/null; then
+    echo "Installing wandb..."
+    pip install wandb -q
+fi
+echo "wandb: $(python3 -c 'import wandb; print(wandb.__version__)')"
+echo ""
+
 # --- Stage 4: Train SAE (~30 min) ---
 echo "$(date): === Stage 4: Train SAE ==="
 python3 -m experiments.sae.train \

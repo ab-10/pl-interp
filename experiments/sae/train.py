@@ -9,10 +9,23 @@ import random
 from pathlib import Path
 from typing import Iterator
 
+import os
+
 import numpy as np
 import torch
 
 from experiments import config
+
+try:
+    import wandb as _wandb
+except ImportError:
+    _wandb = None
+
+
+def _wandb_enabled() -> bool:
+    if _wandb is None:
+        return False
+    return os.environ.get("WANDB_DISABLED", "").lower() not in ("true", "1")
 from experiments.sae.model import TopKSAE, sae_loss
 from experiments.storage.activation_store import ActivationReader
 from experiments.storage.schema import GenerationRecord, read_records
@@ -187,6 +200,22 @@ def train_sae(
     log_path = output_dir / "training_log.jsonl"
     log_interval = 50
 
+    # --- wandb ---
+    use_wandb = _wandb_enabled()
+    if use_wandb:
+        _wandb.init(
+            project=config.WANDB_PROJECT,
+            entity=config.WANDB_ENTITY,
+            name="sae-training",
+            config={
+                "d_model": d_model, "d_sae": d_sae, "k": k,
+                "lr": lr, "batch_size": batch_size, "token_budget": token_budget,
+                "warmup_steps": warmup_steps, "total_steps": total_steps,
+                "pass_pool": len(loader.pass_pool), "fail_pool": len(loader.fail_pool),
+            },
+        )
+        print("  wandb: logging enabled")
+
     print(f"Training TopKSAE: d_model={d_model}, d_sae={d_sae}, k={k}")
     print(f"  tokens={token_budget}, batch_size={batch_size}, steps~={total_steps}")
     print(f"  lr={lr}, warmup={warmup_steps}, device={device}")
@@ -250,6 +279,9 @@ def train_sae(
             with open(log_path, "a") as f:
                 f.write(json.dumps(log_entry) + "\n")
 
+            if use_wandb:
+                _wandb.log(log_entry, step=step)
+
             if step % (log_interval * 5) == 0:
                 print(
                     f"  step {step}/{total_steps}  "
@@ -270,6 +302,10 @@ def train_sae(
         checkpoint_path,
     )
     print(f"Saved checkpoint to {checkpoint_path}  (final step: {step})")
+
+    if use_wandb:
+        _wandb.finish()
+
     return checkpoint_path
 
 
@@ -339,6 +375,9 @@ def _resample_dead_features(
 
     # Mark resampled features as alive
     last_fired[dead_indices] = step
+
+    if _wandb_enabled() and _wandb.run is not None:
+        _wandb.log({"dead_resampled": n_dead}, step=step)
 
     print(f"  [resample] step {step}: resampled {n_dead} dead features")
 

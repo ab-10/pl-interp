@@ -5,11 +5,23 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import re
 from collections import defaultdict
 from pathlib import Path
 
 from experiments import config
+
+try:
+    import wandb as _wandb
+except ImportError:
+    _wandb = None
+
+
+def _wandb_enabled() -> bool:
+    if _wandb is None:
+        return False
+    return os.environ.get("WANDB_DISABLED", "").lower() not in ("true", "1")
 from experiments.storage.schema import GenerationRecord, read_records
 
 logger = logging.getLogger(__name__)
@@ -206,6 +218,24 @@ def analyze_steering(steering_dir: Path, output_dir: Path) -> Path:
         json.dump(results, f, indent=2)
 
     logger.info("Wrote %s", out_path)
+
+    # --- wandb summary ---
+    if _wandb_enabled():
+        _wandb.init(
+            project=config.WANDB_PROJECT,
+            entity=config.WANDB_ENTITY,
+            name="steering-analysis",
+        )
+        for exp_type, result in results.items():
+            _wandb.summary[f"{exp_type}/baseline_pass_rate"] = result["baseline_pass_rate"]
+            for cond in result["conditions"]:
+                key = f"{exp_type}/{cond['direction']}_alpha_{cond['alpha']}"
+                _wandb.summary[f"{key}/pass_rate"] = cond["pass_rate"]
+                _wandb.summary[f"{key}/delta"] = cond["delta"]
+                if "fisher_p" in cond:
+                    _wandb.summary[f"{key}/fisher_p"] = cond["fisher_p"]
+        _wandb.finish()
+
     return out_path
 
 
