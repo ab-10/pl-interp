@@ -126,6 +126,7 @@ def analyze_features(
     generations_dir: Path,
     activations_dir: Path,
     output_dir: Path,
+    layer: int,
     batch_size: int = 512,
     device: str = "cuda",
 ) -> Path:
@@ -141,6 +142,7 @@ def analyze_features(
         generations_dir: Directory containing generation record JSONL files.
         activations_dir: Directory containing activation shard files.
         output_dir: Directory for output files.
+        layer: Layer number to read activations from (key in activation_layers dict).
         batch_size: Number of activation rows to process at once through the SAE.
         device: Torch device ("cuda" or "cpu").
 
@@ -171,12 +173,20 @@ def analyze_features(
     # Cache activation readers per shard file
     readers: dict[str, ActivationReader] = {}
 
+    layer_key = str(layer)
+
     for rec_idx, record in enumerate(records):
         if rec_idx % 1000 == 0:
             logger.info("Processing record %d / %d", rec_idx, len(records))
 
-        # Resolve activation shard path
-        act_file = record.activation_file
+        # Resolve activation shard path from per-layer metadata
+        layer_info = record.activation_layers.get(layer_key)
+        if layer_info is None:
+            continue
+        act_file = layer_info["file"]
+        act_offset = layer_info["offset"]
+        act_length = layer_info["length"]
+
         if act_file not in readers:
             act_path = Path(act_file)
             if not act_path.is_absolute():
@@ -184,7 +194,7 @@ def analyze_features(
             readers[act_file] = ActivationReader(act_path)
 
         reader = readers[act_file]
-        act_np = reader.read(record.activation_offset, record.activation_length)
+        act_np = reader.read(act_offset, act_length)
 
         # Process in sub-batches through SAE
         num_tokens = act_np.shape[0]
@@ -241,7 +251,9 @@ def analyze_features(
     # Total tokens per variant (denominator for variant mean activations)
     variant_total_tokens: dict[str, int] = defaultdict(int)
     for record in records:
-        variant_total_tokens[record.variant_id] += record.activation_length
+        layer_info = record.activation_layers.get(layer_key)
+        if layer_info is not None:
+            variant_total_tokens[record.variant_id] += layer_info["length"]
 
     features_list: list[dict] = []
     dead_count = 0
@@ -337,6 +349,12 @@ def main() -> None:
         help="Directory for output files.",
     )
     parser.add_argument(
+        "--layer",
+        type=int,
+        required=True,
+        help="Layer number to read activations from (key in activation_layers dict).",
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=512,
@@ -357,6 +375,7 @@ def main() -> None:
         generations_dir=args.generations_dir,
         activations_dir=args.activations_dir,
         output_dir=args.output_dir,
+        layer=args.layer,
         batch_size=args.batch_size,
         device=args.device,
     )

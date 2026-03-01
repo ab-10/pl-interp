@@ -46,6 +46,7 @@ def compute_contrastive_directions(
     generations_dir: Path,
     activations_dir: Path,
     output_dir: Path,
+    layer: int,
     device: str = "cpu",
 ) -> Path:
     """Compute difference-in-means steering directions for each variant.
@@ -58,6 +59,7 @@ def compute_contrastive_directions(
         generations_dir: Directory containing generation record JSONL files.
         activations_dir: Directory containing activation shard files.
         output_dir: Directory for output files.
+        layer: Layer number to read activations from (key in activation_layers dict).
         device: Torch device for final tensors (default: cpu).
 
     Returns:
@@ -78,12 +80,20 @@ def compute_contrastive_directions(
     # Cache activation readers per shard file
     readers: dict[str, ActivationReader] = {}
 
+    layer_key = str(layer)
+
     for rec_idx, record in enumerate(records):
         if rec_idx % 1000 == 0:
             logger.info("Processing record %d / %d", rec_idx, len(records))
 
-        # Resolve activation shard path
-        act_file = record.activation_file
+        # Resolve activation shard path from per-layer metadata
+        layer_info = record.activation_layers.get(layer_key)
+        if layer_info is None:
+            continue
+        act_file = layer_info["file"]
+        act_offset = layer_info["offset"]
+        act_length = layer_info["length"]
+
         if act_file not in readers:
             act_path = Path(act_file)
             if not act_path.is_absolute():
@@ -91,7 +101,7 @@ def compute_contrastive_directions(
             readers[act_file] = ActivationReader(act_path)
 
         reader = readers[act_file]
-        act_np = reader.read(record.activation_offset, record.activation_length)
+        act_np = reader.read(act_offset, act_length)
 
         num_tokens = act_np.shape[0]
         if num_tokens == 0:
@@ -183,6 +193,12 @@ def main() -> None:
         help="Directory for output files.",
     )
     parser.add_argument(
+        "--layer",
+        type=int,
+        required=True,
+        help="Layer number to read activations from (key in activation_layers dict).",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default="cpu",
@@ -196,6 +212,7 @@ def main() -> None:
         generations_dir=args.generations_dir,
         activations_dir=args.activations_dir,
         output_dir=args.output_dir,
+        layer=args.layer,
         device=args.device,
     )
 
