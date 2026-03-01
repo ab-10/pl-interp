@@ -29,18 +29,16 @@ import torch
 import experiments.config as config
 from transformers import AutoTokenizer
 
-from experiments.datasets.load_humaneval import load_humaneval
 from experiments.datasets.load_mbpp import load_mbpp
 from experiments.evaluation.executor import execute_code
 from experiments.evaluation.extractor import extract_code
 from experiments.evaluation.judge import (
-    build_humaneval_test_script,
     build_mbpp_test_script,
     classify_failure,
 )
 from experiments.generation.activation_capture import ActivationCapture
 from experiments.generation.vllm_runner import VLLMRunner
-from experiments.prompts.builder import build_humaneval_prompt, build_mbpp_prompt
+from experiments.prompts.builder import build_mbpp_prompt
 from experiments.storage.activation_store import ActivationReader, ActivationWriter
 from experiments.storage.schema import make_generation_record, read_records, write_records
 
@@ -78,17 +76,14 @@ def main() -> int:
     print(f"Config: 1 variant (baseline), 1 run (seed {config.BASE_SEED})\n")
 
     # =====================================================================
-    # Load datasets
+    # Load datasets (MBPP only — HumanEval reserved for steering)
     # =====================================================================
-    print("=== Loading datasets ===")
-    humaneval_tasks = load_humaneval()[:2]
-    mbpp_tasks = load_mbpp()[:2]
-    all_tasks = humaneval_tasks + mbpp_tasks
+    print("=== Loading MBPP ===")
+    all_tasks = load_mbpp()[:4]
 
-    _print_result("HumanEval loaded", len(humaneval_tasks) == 2, f"{len(humaneval_tasks)} tasks")
-    _print_result("MBPP loaded", len(mbpp_tasks) == 2, f"{len(mbpp_tasks)} tasks")
+    _print_result("MBPP loaded", len(all_tasks) == 4, f"{len(all_tasks)} tasks")
 
-    for t in mbpp_tasks:
+    for t in all_tasks:
         has_keys = all(k in t for k in ["task_id", "dataset", "prompt", "function_name", "test_list"])
         _print_result(f"MBPP {t['task_id']} has expected keys", has_keys)
         if not has_keys:
@@ -106,12 +101,8 @@ def main() -> int:
     jobs = []
     for task in all_tasks:
         for variant_id in config.VARIANT_IDS:
-            if task["dataset"] == "humaneval":
-                user_content = build_humaneval_prompt(task, variant_id)
-                func_name = task["entry_point"]
-            else:
-                user_content = build_mbpp_prompt(task, variant_id)
-                func_name = task["function_name"]
+            user_content = build_mbpp_prompt(task, variant_id)
+            func_name = task["function_name"]
 
             messages = [{"role": "user", "content": user_content}]
             prompt_ids = tokenizer.apply_chat_template(messages, add_generation_prompt=True)
@@ -198,7 +189,6 @@ def main() -> int:
     # =====================================================================
     print("\n=== Stage 2: Evaluation ===")
 
-    humaneval_lookup = {t["task_id"]: t for t in load_humaneval()}
     mbpp_lookup = {t["task_id"]: t for t in load_mbpp()}
 
     records = read_records(output_path)
@@ -209,16 +199,10 @@ def main() -> int:
 
     pass_count = 0
     for record in records:
-        if record.dataset == "humaneval":
-            task = humaneval_lookup[record.task_id]
-            test_script = build_humaneval_test_script(
-                record.extracted_code, task["test"], task["entry_point"]
-            )
-        else:
-            task = mbpp_lookup[record.task_id]
-            test_script = build_mbpp_test_script(
-                record.extracted_code, task["test_list"], task["test_setup_code"]
-            )
+        task = mbpp_lookup[record.task_id]
+        test_script = build_mbpp_test_script(
+            record.extracted_code, task["test_list"], task["test_setup_code"]
+        )
 
         passed, stderr, exit_code = execute_code(test_script, timeout=config.EXTRACTION_TIMEOUT)
         category, error_msg, error_hash = classify_failure(

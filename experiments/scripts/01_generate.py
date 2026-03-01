@@ -14,11 +14,10 @@ import time
 import wandb
 
 from experiments import config
-from experiments.datasets.load_humaneval import load_humaneval
 from experiments.datasets.load_mbpp import load_mbpp
 from experiments.evaluation.extractor import extract_code
 from experiments.generation.vllm_runner import VLLMRunner
-from experiments.prompts.builder import build_humaneval_prompt, build_mbpp_prompt
+from experiments.prompts.builder import build_mbpp_prompt
 from experiments.storage.schema import make_generation_record, write_records
 
 
@@ -27,12 +26,8 @@ def _build_jobs(tasks: list[dict], tokenizer) -> list[dict]:
     jobs = []
     for task in tasks:
         for variant_id in config.VARIANT_IDS:
-            if task["dataset"] == "humaneval":
-                user_content = build_humaneval_prompt(task, variant_id)
-                func_name = task["entry_point"]
-            else:
-                user_content = build_mbpp_prompt(task, variant_id)
-                func_name = task["function_name"]
+            user_content = build_mbpp_prompt(task, variant_id)
+            func_name = task["function_name"]
 
             messages = [{"role": "user", "content": user_content}]
             prompt_token_ids = tokenizer.apply_chat_template(
@@ -105,9 +100,9 @@ def main() -> int:
     print("Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(config.MODEL_ID)
 
-    # --- Load datasets ---
-    print("Loading datasets...")
-    all_tasks = load_humaneval() + load_mbpp()
+    # --- Load MBPP (HumanEval is reserved for steering evaluation) ---
+    print("Loading MBPP...")
+    all_tasks = load_mbpp()
     print(f"Total tasks: {len(all_tasks)}")
 
     my_tasks = all_tasks[args.shard :: args.num_shards]
