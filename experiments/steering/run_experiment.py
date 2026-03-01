@@ -35,10 +35,11 @@ def _wandb_enabled() -> bool:
         return False
     return os.environ.get("WANDB_DISABLED", "").lower() not in ("true", "1")
 from experiments.datasets.load_humaneval import load_humaneval
+from experiments.datasets.load_mbpp import load_mbpp
 from experiments.evaluation.executor import execute_code
 from experiments.evaluation.extractor import extract_code
-from experiments.evaluation.judge import build_humaneval_test_script, classify_failure
-from experiments.prompts.builder import build_humaneval_prompt
+from experiments.evaluation.judge import build_humaneval_test_script, build_mbpp_test_script, classify_failure
+from experiments.prompts.builder import build_humaneval_prompt, build_mbpp_prompt
 from experiments.steering.hook import make_steering_hook
 from experiments.storage.schema import make_generation_record, write_records
 
@@ -135,14 +136,31 @@ def _evaluate_task(
     Returns:
         (passed, failure_category, error_message, error_hash)
     """
-    test_script = build_humaneval_test_script(
-        extracted_code, task["test"], task["entry_point"]
-    )
+    if task["dataset"] == "mbpp":
+        test_script = build_mbpp_test_script(
+            extracted_code, task["test_list"], task.get("test_setup_code", "")
+        )
+    else:
+        test_script = build_humaneval_test_script(
+            extracted_code, task["test"], task["entry_point"]
+        )
     passed, stderr, exit_code = execute_code(test_script, timeout=config.EXTRACTION_TIMEOUT)
     failure_category, error_message, error_hash = classify_failure(
         passed, stderr, exit_code, extracted_code
     )
     return passed, failure_category, error_message, error_hash
+
+
+def _build_prompt(task: dict) -> str:
+    """Build a prompt for any dataset task."""
+    if task["dataset"] == "mbpp":
+        return build_mbpp_prompt(task, "baseline")
+    return build_humaneval_prompt(task, "baseline")
+
+
+def _get_entry_point(task: dict) -> str:
+    """Get function name for code extraction."""
+    return task.get("entry_point") or task.get("function_name", "")
 
 
 def run_experiment(
@@ -156,8 +174,9 @@ def run_experiment(
     num_shards: int,
     include_random_controls: bool,
     device: str,
+    dataset: str = "humaneval",
 ) -> Path:
-    """Run a steering experiment across directions, alphas, and HumanEval tasks.
+    """Run a steering experiment across directions, alphas, and tasks.
 
     Args:
         directions_path: Path to .pt file with steering directions.
@@ -209,7 +228,12 @@ def run_experiment(
     directions = _load_directions(directions_path, include_random_controls)
 
     # --- Load and shard tasks ---
-    all_tasks = load_humaneval()
+    if dataset == "mbpp":
+        all_tasks = load_mbpp()
+    elif dataset == "both":
+        all_tasks = load_humaneval() + load_mbpp()
+    else:
+        all_tasks = load_humaneval()
     my_tasks = all_tasks[shard::num_shards]
     print(f"Shard {shard}/{num_shards}: {len(my_tasks)}/{len(all_tasks)} tasks")
 
@@ -234,13 +258,13 @@ def run_experiment(
     for i, task in enumerate(my_tasks):
         print(f"  Task {i+1}/{total_tasks}: {task['task_id']}, condition baseline")
 
-        prompt = build_humaneval_prompt(task, "baseline")
+        prompt = _build_prompt(task)
         generated_text, gen_ids, prompt_tokens = _generate_text(
             model, tokenizer, prompt, device
         )
 
         extracted_code, extraction_clean = extract_code(
-            generated_text, task["entry_point"]
+            generated_text, _get_entry_point(task)
         )
 
         passed, failure_category, error_message, error_hash = _evaluate_task(
@@ -290,7 +314,7 @@ def run_experiment(
             for i, task in enumerate(my_tasks):
                 print(f"  Task {i+1}/{total_tasks}: {task['task_id']}, condition {condition}")
 
-                prompt = build_humaneval_prompt(task, "baseline")
+                prompt = _build_prompt(task)
 
                 # Attach steering hook
                 handle = model.model.layers[steer_layer].register_forward_hook(
@@ -305,7 +329,7 @@ def run_experiment(
                 handle.remove()
 
                 extracted_code, extraction_clean = extract_code(
-                    generated_text, task["entry_point"]
+                    generated_text, _get_entry_point(task)
                 )
 
                 passed, failure_category, error_message, error_hash = _evaluate_task(
@@ -416,6 +440,10 @@ def main() -> int:
         "--include-random-controls", action="store_true",
         help="Include random direction controls from the directions file",
     )
+    parser.add_argument(
+        "--dataset", type=str, default="humaneval", choices=["humaneval", "mbpp", "both"],
+        help="Dataset to evaluate on (default: humaneval)",
+    )
     args = parser.parse_args()
 
     alphas = [float(a.strip()) for a in args.alphas.split(",")]
@@ -435,6 +463,7 @@ def main() -> int:
         num_shards=args.num_shards,
         include_random_controls=args.include_random_controls,
         device=device,
+        dataset=args.dataset,
     )
 
     print(f"\nOutput: {output_path}")
