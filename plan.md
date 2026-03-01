@@ -452,10 +452,13 @@ The NC80adis VM has 2× 3.5TB local NVMe drives, RAID0'd and mounted at `/scratc
 These are ephemeral — data is lost on VM deallocation (not reboot).
 
 **During pipeline execution**: All intermediate and output data writes go to `/scratch`:
-- `/scratch/generations/` — generation records (JSON)
-- `/scratch/activations/` — mmap activation files (~50GB)
-- `/scratch/sae/` — SAE checkpoints and feature analysis
-- `/scratch/steering/` — steering experiment results
+- `/scratch/generations/` — JSONL shards (`shard_0.jsonl`, `shard_1.jsonl`), one line per GenerationRecord, appendable and crash-safe
+- `/scratch/activations/` — memory-mapped numpy files (`shard_0.npy`, `shard_1.npy`), float16, shape (N_tokens, 4096). Each GenerationRecord stores `activation_file`, `activation_offset`, `activation_length` to index in.
+- `/scratch/sae/` — SAE checkpoints (`model.pt`), training log (`training_log.jsonl`)
+- `/scratch/steering/` — steering results as JSONL (`sae_steering.jsonl`, `contrastive_steering.jsonl`), same GenerationRecord format with added steering metadata
+- `/scratch/analysis/` — final outputs (`pass_rates.csv`, `feature_candidates.json`)
+
+**Why JSONL for records**: ~20k records total — no need for SQLite query overhead or Parquet's write-once constraint. JSONL is appendable (one complete record per line), human-readable for debugging, and trivially shardable across GPU processes. Load into DataFrame for analysis.
 
 **After pipeline completes**: Copy final results to the persistent OS disk:
 ```bash
