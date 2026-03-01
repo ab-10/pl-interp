@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+import sys
 import tempfile
 
 
@@ -30,7 +31,7 @@ def execute_code(script: str, timeout: int = 3) -> tuple[bool, str, int]:
             f.write(script)
 
         proc = subprocess.Popen(
-            ["python", tmp_path],
+            [sys.executable, tmp_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,

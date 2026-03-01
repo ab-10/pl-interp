@@ -1,4 +1,7 @@
-"""Tests for the decode-only steering hook. Uses plain torch tensors, no actual model needed."""
+"""Tests for the decode-only steering hook. Uses plain torch tensors, no actual model needed.
+
+Tests both tuple and bare tensor output formats (transformers version dependent).
+"""
 
 import torch
 
@@ -11,8 +14,10 @@ def _make_direction(hidden_dim: int = 4096) -> torch.Tensor:
     return d / d.norm()
 
 
-def test_alpha_zero_decode_noop():
-    """At alpha=0, decode step output[0] is unchanged."""
+# --- Tuple output format (older transformers) ---
+
+def test_tuple_alpha_zero_decode_noop():
+    """Tuple output: alpha=0, decode step — output unchanged."""
     direction = _make_direction()
     hook = make_steering_hook(direction, alpha=0.0)
 
@@ -21,11 +26,12 @@ def test_alpha_zero_decode_noop():
 
     result = hook(None, None, output)
 
+    assert isinstance(result, tuple)
     assert torch.equal(result[0], hidden)
 
 
-def test_alpha_nonzero_decode():
-    """At alpha=3.0, decode step: output[0] == original + 3.0 * direction."""
+def test_tuple_alpha_nonzero_decode():
+    """Tuple output: alpha=3.0, decode step — modification applied."""
     direction = _make_direction()
     hook = make_steering_hook(direction, alpha=3.0)
 
@@ -35,11 +41,12 @@ def test_alpha_nonzero_decode():
     result = hook(None, None, output)
 
     expected = hidden + 3.0 * direction
+    assert isinstance(result, tuple)
     assert torch.allclose(result[0], expected, atol=1e-6)
 
 
-def test_prefill_unchanged():
-    """Prefill step (shape[1] > 1): output[0] unchanged regardless of alpha."""
+def test_tuple_prefill_unchanged():
+    """Tuple output: prefill step (shape[1] > 1) — unchanged."""
     direction = _make_direction()
     hook = make_steering_hook(direction, alpha=3.0)
 
@@ -48,11 +55,12 @@ def test_prefill_unchanged():
 
     result = hook(None, None, output)
 
+    assert isinstance(result, tuple)
     assert torch.equal(result[0], hidden)
 
 
-def test_output_tail_unchanged_decode():
-    """output[1:] always unchanged during decode step."""
+def test_tuple_tail_unchanged():
+    """Tuple output: output[1:] preserved during decode step."""
     direction = _make_direction()
     hook = make_steering_hook(direction, alpha=3.0)
 
@@ -67,39 +75,52 @@ def test_output_tail_unchanged_decode():
     assert result[2] is kv_cache
 
 
-def test_output_tail_unchanged_prefill():
-    """output[1:] always unchanged during prefill step."""
+# --- Bare tensor output format (newer transformers >=4.57) ---
+
+def test_tensor_alpha_zero_decode_noop():
+    """Bare tensor output: alpha=0, decode step — output unchanged."""
     direction = _make_direction()
-    hook = make_steering_hook(direction, alpha=5.0)
+    hook = make_steering_hook(direction, alpha=0.0)
+
+    hidden = torch.randn(1, 1, 4096)
+    result = hook(None, None, hidden.clone())
+
+    assert isinstance(result, torch.Tensor)
+    assert torch.equal(result, hidden)
+
+
+def test_tensor_alpha_nonzero_decode():
+    """Bare tensor output: alpha=3.0, decode step — modification applied."""
+    direction = _make_direction()
+    hook = make_steering_hook(direction, alpha=3.0)
+
+    hidden = torch.randn(1, 1, 4096)
+    result = hook(None, None, hidden.clone())
+
+    expected = hidden + 3.0 * direction
+    assert isinstance(result, torch.Tensor)
+    assert torch.allclose(result, expected, atol=1e-6)
+
+
+def test_tensor_prefill_unchanged():
+    """Bare tensor output: prefill step (shape[1] > 1) — unchanged."""
+    direction = _make_direction()
+    hook = make_steering_hook(direction, alpha=3.0)
 
     hidden = torch.randn(1, 10, 4096)
-    attn_weights = torch.randn(1, 8, 10, 64)
-    kv_cache = torch.randn(2, 1, 8, 64)
-    output = (hidden, attn_weights, kv_cache)
+    result = hook(None, None, hidden.clone())
 
-    result = hook(None, None, output)
-
-    assert result[1] is attn_weights
-    assert result[2] is kv_cache
+    assert isinstance(result, torch.Tensor)
+    assert torch.equal(result, hidden)
 
 
-def test_return_type_is_tuple():
-    """Return type is always a tuple."""
+def test_tensor_returns_tensor_not_tuple():
+    """Bare tensor input → bare tensor output (not wrapped in tuple)."""
     direction = _make_direction()
-
-    # Decode step with modification
     hook = make_steering_hook(direction, alpha=3.0)
-    output_decode = (torch.randn(1, 1, 4096), None, None)
-    result_decode = hook(None, None, output_decode)
-    assert isinstance(result_decode, tuple)
 
-    # Prefill step (no modification)
-    output_prefill = (torch.randn(1, 10, 4096), None, None)
-    result_prefill = hook(None, None, output_prefill)
-    assert isinstance(result_prefill, tuple)
+    hidden = torch.randn(1, 1, 4096)
+    result = hook(None, None, hidden.clone())
 
-    # alpha=0 (no modification)
-    hook_noop = make_steering_hook(direction, alpha=0.0)
-    output_noop = (torch.randn(1, 1, 4096), None, None)
-    result_noop = hook_noop(None, None, output_noop)
-    assert isinstance(result_noop, tuple)
+    assert isinstance(result, torch.Tensor)
+    assert not isinstance(result, tuple)

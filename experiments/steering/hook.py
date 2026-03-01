@@ -20,15 +20,20 @@ def make_steering_hook(
     def hook(
         module: torch.nn.Module,
         input: tuple,
-        output: tuple,
-    ) -> tuple:
-        # MistralDecoderLayer returns (hidden_states, attn_weights, present_key_value)
-        hidden_states = output[0]
+        output,
+    ):
+        # MistralDecoderLayer output varies by transformers version:
+        #   - Newer (>=4.57): bare Tensor (hidden_states)
+        #   - Older: tuple (hidden_states, attn_weights, present_key_value)
+        is_tuple = isinstance(output, tuple)
+        hidden_states = output[0] if is_tuple else output
 
         if hidden_states.shape[1] == 1 and alpha != 0.0:
             # Decode step: inject steering direction
             hidden_states = hidden_states + alpha * direction
-            return (hidden_states,) + output[1:]
+            if is_tuple:
+                return (hidden_states,) + output[1:]
+            return hidden_states
 
         return output
 

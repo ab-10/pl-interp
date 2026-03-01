@@ -47,7 +47,7 @@ def _load_model_and_tokenizer() -> tuple:
     tokenizer = AutoTokenizer.from_pretrained(config.MODEL_ID)
     model = AutoModelForCausalLM.from_pretrained(
         config.MODEL_ID,
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
         device_map="cuda",
     )
     model.eval()
@@ -71,8 +71,9 @@ def check_hidden_state_indexing(model, tokenizer) -> bool:
     hooked_output = {}
 
     def capture_hook(module, inp, out):
-        # MistralDecoderLayer returns (hidden_states, ...) as a tuple
-        hooked_output["tensor"] = out[0].detach().clone()
+        # Newer transformers: bare tensor. Older: tuple (hidden_states, ...).
+        tensor = out[0] if isinstance(out, tuple) else out
+        hooked_output["tensor"] = tensor.detach().clone()
 
     handle = model.model.layers[config.CAPTURE_LAYER].register_forward_hook(capture_hook)
 
@@ -206,7 +207,7 @@ def check_steering_hook(model, tokenizer) -> bool:
 
     def counting_hook(module, inp, out):
         fire_count["total"] += 1
-        hidden_states = out[0]
+        hidden_states = out[0] if isinstance(out, tuple) else out
         if hidden_states.shape[1] == 1:
             fire_count["injected"] += 1
         return original_hook_fn(module, inp, out)
@@ -221,11 +222,11 @@ def check_steering_hook(model, tokenizer) -> bool:
     large_differs = not torch.equal(baseline_ids, large_alpha_ids)
     _print_result("alpha=10.0 output != unhooked output", large_differs)
 
-    # Decode-only gating: total fires = 1 prefill + N decode steps
-    # Injected should equal the number of generated tokens (decode steps where shape[1]==1)
+    # Decode-only gating: prefill processes full prompt and produces 1st new token,
+    # then (N-1) decode steps produce tokens 2..N. Total = N calls, injected = N-1.
     num_new_tokens = large_alpha_ids.shape[1] - inputs["input_ids"].shape[1]
-    expected_total = 1 + num_new_tokens  # 1 prefill + N decode
-    expected_injected = num_new_tokens   # only decode steps
+    expected_total = num_new_tokens       # 1 prefill + (N-1) decode = N
+    expected_injected = num_new_tokens - 1  # only decode steps (shape[1]==1)
 
     gating_ok = (fire_count["injected"] == expected_injected and
                  fire_count["total"] == expected_total)
@@ -244,8 +245,15 @@ def check_steering_hook(model, tokenizer) -> bool:
 # ---------------------------------------------------------------------------
 
 def check_token_round_trip(model, tokenizer) -> bool:
-    """Generate text with HF, decode token IDs, re-encode, confirm match."""
-    print("\nCheck 5: Token ID round-trip")
+    """Verify gen_token_ids can be used directly for teacher-forcing replay.
+
+    Our pipeline never re-tokenizes text — we store raw token IDs from generation
+    and feed them directly to the HF model. This check validates that:
+    1. All gen_token_ids are valid vocabulary indices
+    2. Concatenating prompt_ids + gen_token_ids produces a valid model input
+    3. The model can run a forward pass on the concatenated sequence
+    """
+    print("\nCheck 5: Token ID validity + teacher-forcing replay")
 
     prompt = "def add(a, b):\n    return a + b\n\ndef multiply"
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
@@ -260,29 +268,49 @@ def check_token_round_trip(model, tokenizer) -> bool:
             pad_token_id=tokenizer.pad_token_id,
         )
 
-    # Extract only the generated token IDs (exclude prompt)
     prompt_len = inputs["input_ids"].shape[1]
     gen_ids = output_ids[0, prompt_len:].tolist()
 
-    # Decode then re-encode
-    decoded_text = tokenizer.decode(gen_ids, skip_special_tokens=False)
-    re_encoded_ids = tokenizer.encode(decoded_text, add_special_tokens=False)
-
-    match = gen_ids == re_encoded_ids
+    # Check 1: All token IDs are within vocabulary range
+    vocab_size = tokenizer.vocab_size
+    all_valid = all(0 <= tid < vocab_size for tid in gen_ids)
     _print_result(
-        "token ID round-trip (decode -> re-encode)",
-        match,
-        f"original={len(gen_ids)} tokens, re-encoded={len(re_encoded_ids)} tokens",
+        "all gen_token_ids within vocab range",
+        all_valid,
+        f"{len(gen_ids)} tokens, vocab_size={vocab_size}",
     )
 
-    if not match:
-        # Show first divergence for debugging
-        for i, (a, b) in enumerate(zip(gen_ids, re_encoded_ids)):
-            if a != b:
-                print(f"    First mismatch at position {i}: original={a}, re-encoded={b}")
-                break
+    # Check 2: Decoded text is non-empty and readable
+    decoded = tokenizer.decode(gen_ids, skip_special_tokens=True)
+    has_content = len(decoded.strip()) > 0
+    _print_result(
+        "decoded text is non-empty",
+        has_content,
+        f"{len(decoded)} chars",
+    )
 
-    return match
+    # Check 3: Teacher-forcing replay works — concatenate prompt + gen IDs,
+    # feed to model, get valid output (this is exactly what activation_capture does)
+    prompt_ids = inputs["input_ids"][0].tolist()
+    full_ids = prompt_ids + gen_ids
+    full_tensor = torch.tensor([full_ids], dtype=torch.long, device=model.device)
+
+    with torch.no_grad():
+        replay_out = model(full_tensor, output_hidden_states=True)
+
+    layer16 = replay_out.hidden_states[config.HIDDEN_STATES_INDEX]
+    replay_ok = (
+        layer16.shape[0] == 1
+        and layer16.shape[1] == len(full_ids)
+        and layer16.shape[2] == config.MODEL_HIDDEN_DIM
+    )
+    _print_result(
+        "teacher-forcing replay produces valid activations",
+        replay_ok,
+        f"shape={layer16.shape}, expected=(1, {len(full_ids)}, {config.MODEL_HIDDEN_DIM})",
+    )
+
+    return all_valid and has_content and replay_ok
 
 
 # ---------------------------------------------------------------------------
