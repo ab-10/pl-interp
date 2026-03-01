@@ -1,20 +1,17 @@
 import { test, expect } from "@playwright/test";
 
-/** Mock /features response matching the new dual-layer API shape. */
+/** Mock /features response — flat dict of feature labels. */
 const MOCK_FEATURES = {
-  "18": {
-    "100": "Type annotations (Python/TypeScript)",
-    "200": "Error handling patterns",
-  },
-  "27": {
-    "300": "Recursive patterns",
-  },
+  "100": "Type annotations (Python/TypeScript)",
+  "200": "Error handling patterns",
+  "300": "Recursive patterns",
 };
 
 /** Mock /info response. */
 const MOCK_INFO = {
-  model: "mistralai/Ministral-8B-Instruct-2410",
-  saes: { "18": "8b_saes/layer18", "27": "8b_saes/layer27" },
+  model: "mistralai/Mistral-7B-Instruct-v0.3",
+  sae: "sae_checkpoint.pt",
+  layer: 16,
 };
 
 /** Mock /generate response. */
@@ -44,7 +41,7 @@ test.describe("Feature Steering App", () => {
     // Header
     await expect(page.locator("h1")).toHaveText("Feature Steering");
     await expect(
-      page.getByText("Steer Ministral 8B code generation")
+      page.getByText("Steer Mistral 7B code generation")
     ).toBeVisible();
 
     // Prompt input with default value
@@ -63,24 +60,19 @@ test.describe("Feature Steering App", () => {
     await page.goto("/");
 
     await expect(
-      page.getByText("Model: mistralai/Ministral-8B-Instruct-2410")
+      page.getByText("Model: mistralai/Mistral-7B-Instruct-v0.3")
     ).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("SAE L18: 8b_saes/layer18")).toBeVisible();
-    await expect(page.getByText("SAE L27: 8b_saes/layer27")).toBeVisible();
+    await expect(page.getByText("SAE: sae_checkpoint.pt (layer 16)")).toBeVisible();
   });
 
-  test("features load grouped by layer", async ({ page }) => {
+  test("features load as flat list", async ({ page }) => {
     await mockBackend(page);
     await page.goto("/");
-
-    // Layer headings
-    await expect(page.getByText("Layer 18")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Layer 27")).toBeVisible();
 
     // Feature labels
     await expect(
       page.getByText("Type annotations (Python/TypeScript)")
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 5000 });
     await expect(page.getByText("Error handling patterns")).toBeVisible();
     await expect(page.getByText("Recursive patterns")).toBeVisible();
 
@@ -94,7 +86,7 @@ test.describe("Feature Steering App", () => {
   }) => {
     await mockBackend(page);
     await page.goto("/");
-    await expect(page.getByText("Layer 18")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Type annotations")).toBeVisible({ timeout: 5000 });
 
     // Feature sliders (skip the temperature slider which is first)
     const featureSliders = page.locator(
@@ -116,7 +108,7 @@ test.describe("Feature Steering App", () => {
   test("generate produces diff output", async ({ page }) => {
     await mockBackend(page);
     await page.goto("/");
-    await expect(page.getByText("Layer 18")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Type annotations")).toBeVisible({ timeout: 5000 });
 
     // Empty state shown before generating
     await expect(
@@ -131,21 +123,16 @@ test.describe("Feature Steering App", () => {
     await expect(page.locator("pre")).toBeVisible();
   });
 
-  test("custom feature input has layer selector", async ({ page }) => {
+  test("custom feature input works without layer selector", async ({ page }) => {
     await mockBackend(page);
     await page.goto("/");
     await expect(page.getByText("Custom Features")).toBeVisible({
       timeout: 5000,
     });
 
-    // Layer dropdown
-    const layerSelect = page.locator("select");
-    await expect(layerSelect).toBeVisible();
-    await expect(layerSelect).toHaveValue("18");
-
-    // Can switch to layer 27
-    await layerSelect.selectOption("27");
-    await expect(layerSelect).toHaveValue("27");
+    // No layer dropdown
+    const selects = page.locator("select");
+    await expect(selects).toHaveCount(0);
 
     // Feature ID input
     const featureInput = page.locator('input[placeholder="e.g. 1234"]');
@@ -163,12 +150,12 @@ test.describe("Feature Steering App", () => {
     await page.locator('input[placeholder="e.g. 1234"]').fill("42");
     await page.getByRole("button", { name: "Add" }).click();
 
-    // Custom feature slider appears with layer prefix
-    await expect(page.getByText("L18 #42")).toBeVisible();
+    // Custom feature slider appears
+    await expect(page.getByText("#42")).toBeVisible();
 
     // Remove it
     await page.getByTitle("Remove").click();
-    await expect(page.getByText("L18 #42")).not.toBeVisible();
+    await expect(page.getByText("#42")).not.toBeVisible();
   });
 
   test("error banner shows when backend is unreachable", async ({ page }) => {
@@ -194,7 +181,7 @@ test.describe("Feature Steering App", () => {
   }) => {
     // Return empty feature labels
     await page.route("**/api/backend/features", (route) =>
-      route.fulfill({ json: { "18": {}, "27": {} } })
+      route.fulfill({ json: {} })
     );
     await page.route("**/api/backend/info", (route) =>
       route.fulfill({ json: MOCK_INFO })
