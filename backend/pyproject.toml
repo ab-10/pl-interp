@@ -1,0 +1,11 @@
+[project]
+name = "backend"
+version = "0.0.1"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+test = ["pytest", "requests", "fastapi", "httpx"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
