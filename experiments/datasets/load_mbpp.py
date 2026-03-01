@@ -11,7 +11,7 @@ def _extract_function_name(test_list: list[str]) -> str:
     Parses assertions like 'assert func_name(args) == expected' to get func_name.
     """
     for test_str in test_list:
-        match = re.search(r"assert\s+(\w+)\s*\(", test_str)
+        match = re.search(r"assert\s+\(?(\w+)\s*\(", test_str)
         if match:
             return match.group(1)
     raise ValueError(f"Could not extract function name from test_list: {test_list}")
