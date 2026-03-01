@@ -7,7 +7,6 @@ import PromptInput from "@/components/PromptInput";
 import FeaturePanel from "@/components/FeaturePanel";
 import ResultsPanel from "@/components/ResultsPanel";
 import ErrorBanner from "@/components/ErrorBanner";
-import FeatureSelector from "@/components/FeatureSelector";
 import TokenHeatmapStrip from "@/components/TokenHeatmapStrip";
 import SAEDecompositionBar from "@/components/SAEDecompositionBar";
 import LayerAttributionChart from "@/components/LayerAttributionChart";
@@ -30,7 +29,6 @@ export default function Home() {
   const [analyzeData, setAnalyzeData] = useState<AnalyzeResponse | null>(null);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [selectedToken, setSelectedToken] = useState<number | null>(null);
-  const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchInfo()
@@ -39,10 +37,6 @@ export default function Home() {
     fetchFeatures()
       .then((feats) => {
         setFeatures(feats);
-        // Default to first feature for analysis
-        if (feats.length > 0 && selectedFeatureId === null) {
-          setSelectedFeatureId(feats[0].id);
-        }
       })
       .catch((err) => {
         setError(`Cannot connect to backend: ${err.message}`);
@@ -62,8 +56,19 @@ export default function Home() {
     if (!prompt.trim() || loading) return;
     setLoading(true);
     setError(null);
+    setSelectedToken(null);
+    setAnalyzeData(null);
 
     const overrides = getActiveOverrides();
+
+    // Run analysis in parallel if a feature is selected
+    if (activeFeatureId !== null) {
+      setAnalyzeLoading(true);
+      analyzeFeature(prompt, activeFeatureId, overrides)
+        .then(setAnalyzeData)
+        .catch(() => {})
+        .finally(() => setAnalyzeLoading(false));
+    }
 
     try {
       const result = await generateCompletion(prompt, overrides, temperature);
@@ -76,47 +81,22 @@ export default function Home() {
     }
   };
 
-  const handleAnalyze = async (featureId?: number) => {
-    const fId = featureId ?? selectedFeatureId;
-    if (!prompt.trim() || analyzeLoading || fId === null) return;
-    setAnalyzeLoading(true);
-    setError(null);
-    setSelectedToken(null);
-
-    const overrides = getActiveOverrides();
-
-    try {
-      const result = await analyzeFeature(prompt, fId, overrides);
-      setAnalyzeData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Analysis failed");
-    } finally {
-      setAnalyzeLoading(false);
-    }
-  };
-
-  const handleFeatureChange = (featureId: number) => {
-    setSelectedFeatureId(featureId);
-    // Re-analyze with new feature
-    handleAnalyze(featureId);
-  };
-
   const tokenDetail =
     analyzeData && selectedToken !== null
       ? analyzeData.token_details[String(selectedToken)]
       : null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-white">
+      <header className="border-b border-zinc-200 px-6 py-4">
+        <h1 className="text-xl font-semibold text-zinc-900">
           Feature Steering
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-zinc-500">
           Steer Ministral 8B code generation with SAE feature sliders
         </p>
         {info && (
-          <div className="mt-1 flex gap-4 text-xs font-mono text-zinc-400 dark:text-zinc-500">
+          <div className="mt-1 flex gap-4 text-xs font-mono text-zinc-400">
             <span>Model: {info.model}</span>
             <span>SAE: {info.sae}{info.layer != null ? ` (layer ${info.layer})` : ""}</span>
           </div>
@@ -127,7 +107,7 @@ export default function Home() {
 
       <div className="flex flex-1 gap-0">
         {/* Left sidebar: prompt + features */}
-        <aside className="relative z-10 flex w-80 flex-shrink-0 flex-col gap-6 overflow-y-auto border-r border-zinc-200 p-6 dark:border-zinc-800">
+        <aside className="relative z-10 flex w-80 flex-shrink-0 flex-col gap-6 overflow-y-auto border-r border-zinc-200 bg-zinc-50 p-6">
           <PromptInput
             value={prompt}
             onChange={setPrompt}
@@ -135,7 +115,7 @@ export default function Home() {
             loading={loading}
           />
           <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="mb-2 block text-sm font-medium text-zinc-700">
               Temperature: {temperature.toFixed(2)}
             </label>
             <input
@@ -145,9 +125,9 @@ export default function Home() {
               step="0.05"
               value={temperature}
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="w-full accent-blue-600"
+              className="w-full accent-orange-500"
             />
-            <div className="mt-1 flex justify-between text-xs text-zinc-400">
+            <div className="mt-1 flex justify-between text-xs text-zinc-500">
               <span>0 (greedy)</span>
               <span>1.0</span>
             </div>
@@ -179,42 +159,27 @@ export default function Home() {
           />
         </aside>
 
-        {/* Main area: results + analysis */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <ResultsPanel baseline={baseline} steered={steered} loading={loading} />
+        {/* Main area: results (left) + analysis (right) */}
+        <main className="grid flex-1 grid-cols-2 gap-0">
+          {/* Left column: Diff output */}
+          <div className="overflow-y-auto border-r border-zinc-200 p-6">
+            <ResultsPanel baseline={baseline} steered={steered} loading={loading} />
+          </div>
 
-          {/* Feature Activation Analysis */}
-          <div className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                Feature Activation Analysis
-              </h2>
-              <div className="flex items-center gap-4">
-                {features.length > 0 && selectedFeatureId !== null && (
-                  <FeatureSelector
-                    features={features}
-                    selectedFeatureId={selectedFeatureId}
-                    onChange={handleFeatureChange}
-                  />
-                )}
-                <button
-                  onClick={() => handleAnalyze()}
-                  disabled={analyzeLoading || !prompt.trim() || selectedFeatureId === null}
-                  className="rounded bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {analyzeLoading ? "Analyzing..." : "Analyze"}
-                </button>
-              </div>
-            </div>
+          {/* Right column: Feature Activation Analysis */}
+          <div className="overflow-y-auto p-6">
+            <h2 className="text-lg font-semibold text-zinc-900 mb-4">
+              Feature Activation Analysis
+            </h2>
 
             {!analyzeData && !analyzeLoading && (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Select a feature and click Analyze to visualize feature activations on generated text.
+              <p className="text-sm text-zinc-500">
+                Select a feature and generate to see activation analysis.
               </p>
             )}
 
             {analyzeLoading && (
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
+              <div className="flex items-center gap-2 text-sm text-zinc-500">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent" />
                 Running analysis (generating + forward pass + SAE encode)...
               </div>
@@ -228,7 +193,7 @@ export default function Home() {
                 <TokenHeatmapStrip
                   tokens={analyzeData.tokens}
                   activations={analyzeData.feature_activations}
-                  featureId={selectedFeatureId!}
+                  featureId={activeFeatureId!}
                   selectedIndex={selectedToken}
                   onTokenClick={setSelectedToken}
                 />
@@ -240,12 +205,12 @@ export default function Home() {
                       token={analyzeData.tokens[selectedToken]}
                       decomposition={tokenDetail.sae_decomposition}
                       reconstructionError={tokenDetail.reconstruction_error}
-                      highlightedFeatureId={selectedFeatureId!}
+                      highlightedFeatureId={activeFeatureId!}
                       featureActivation={analyzeData.feature_activations[selectedToken]}
                     />
                     <LayerAttributionChart
                       attribution={tokenDetail.layer_attribution}
-                      featureId={selectedFeatureId!}
+                      featureId={activeFeatureId!}
                       featureActivation={analyzeData.feature_activations[selectedToken]}
                       token={analyzeData.tokens[selectedToken]}
                     />
