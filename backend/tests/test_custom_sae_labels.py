@@ -17,7 +17,7 @@ for mod_name in ("torch", "torch.cuda", "torch.nn", "transformers"):
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from backend.server_custom_sae import _build_feature_label, _find_monotonicity
+from backend.server_custom_sae import _build_feature_label, _find_monotonicity, _get_monotonicity_data
 
 ARTIFACTS = Path(__file__).resolve().parent.parent.parent / "artifacts"
 MISTRAL_7B = ARTIFACTS / "mistral-7b"
@@ -117,3 +117,29 @@ class TestBuildFeatureLabel:
         )
         label = _build_feature_label(candidate, mistral_7b_steering)
         assert "effect=" in label
+
+
+# ---------------------------------------------------------------------------
+# _get_monotonicity_data
+# ---------------------------------------------------------------------------
+
+
+class TestGetMonotonicityData:
+    def test_returns_full_property_dict(self, mistral_7b_steering):
+        result = _get_monotonicity_data("40693", mistral_7b_steering)
+        assert result is not None
+        assert isinstance(result, dict)
+        # Should have multiple properties
+        assert len(result) >= 1
+        # Each property should have expected fields
+        for prop_data in result.values():
+            assert "effect_size" in prop_data
+            assert "is_monotonic" in prop_data
+
+    def test_returns_none_for_unknown(self, mistral_7b_steering):
+        result = _get_monotonicity_data("999999", mistral_7b_steering)
+        assert result is None
+
+    def test_returns_none_for_empty_analysis(self):
+        result = _get_monotonicity_data("40693", {})
+        assert result is None

@@ -7,37 +7,38 @@ interface PromptInputProps {
   loading: boolean;
 }
 
-export default function PromptInput({
-  value,
-  onChange,
-  onGenerate,
-  loading,
-}: PromptInputProps) {
+export default function PromptInput({ value, onChange, onGenerate, loading }: PromptInputProps) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor="prompt" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <label className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
         Prompt
       </label>
       <textarea
-        id="prompt"
+        placeholder="def fibonacci(n):"
+        rows={3}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
             onGenerate();
           }
         }}
-        placeholder="def fibonacci(n):"
-        rows={4}
-        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+        className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 resize-none"
       />
       <button
         onClick={onGenerate}
         disabled={loading || !value.trim()}
-        className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-md bg-blue-600 px-4 py-1.5 text-xs font-medium text-white transition-all hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
       >
-        {loading ? "Generating..." : "Generate (Ctrl+Enter)"}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+            Generating...
+          </span>
+        ) : (
+          "Generate ⌘↵"
+        )}
       </button>
     </div>
   );

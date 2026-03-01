@@ -17,6 +17,7 @@ Environment variables:
   MODEL_PATH           — path or HF ID for model (default: mistralai/Mistral-7B-Instruct-v0.3)
   STEER_LAYER          — decoder layer index to hook (default: 16)
   MAX_NEW_TOKENS       — generation length (default: 200)
+  FEATURE_MAP          — path to feature_map.json (optional, enables /feature_map endpoint)
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from experiments.sae.model import TopKSAE
 from experiments.steering.hook import make_steering_hook
+from experiments.steering.analyze_steering import compute_all_densities
 
 # ---------------------------------------------------------------------------
 # Config from environment
@@ -49,9 +51,10 @@ STEERING_RESULTS = os.environ.get("STEERING_RESULTS", "")
 MODEL_PATH = os.environ.get("MODEL_PATH", "mistralai/Mistral-7B-Instruct-v0.3")
 STEER_LAYER = int(os.environ.get("STEER_LAYER", "16"))
 MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "200"))
+FEATURE_MAP = os.environ.get("FEATURE_MAP", "")
 
 # ---------------------------------------------------------------------------
-# Request/response models (identical to server.py)
+# Request/response models
 # ---------------------------------------------------------------------------
 
 
@@ -64,6 +67,8 @@ class GenerateRequest(BaseModel):
     prompt: str
     features: list[FeatureOverride] = []
     temperature: float = 0.3
+    include_activations: bool = False
+    alphas: list[float] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +78,8 @@ class GenerateRequest(BaseModel):
 model: AutoModelForCausalLM | None = None
 tokenizer: AutoTokenizer | None = None
 sae: TopKSAE | None = None
-feature_labels: dict[str, str] = {}
+feature_registry: dict[str, dict] = {}
+feature_map_data: dict | None = None
 
 
 def _build_feature_label(candidate: dict, steering_analysis: dict) -> str:
@@ -124,9 +130,18 @@ def _find_monotonicity(
     return None
 
 
+def _get_monotonicity_data(direction_name: str, steering_analysis: dict) -> dict | None:
+    """Return the full monotonicity dict for all properties for a direction, or None."""
+    for exp_data in steering_analysis.values():
+        mono = exp_data.get("monotonicity", {})
+        if direction_name in mono and mono[direction_name]:
+            return mono[direction_name]
+    return None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global model, tokenizer, sae, feature_labels
+    global model, tokenizer, sae, feature_registry, feature_map_data
 
     if not SAE_CHECKPOINT:
         raise RuntimeError("SAE_CHECKPOINT environment variable not set")
@@ -168,17 +183,69 @@ async def lifespan(app: FastAPI):
         with open(STEERING_RESULTS) as f:
             steering_analysis = json.load(f)
 
-    feature_labels.clear()
+    feature_registry.clear()
     for c in candidates_data["candidates"]:
         idx = c["feature_idx"]
-        feature_labels[str(idx)] = _build_feature_label(c, steering_analysis)
+        feature_registry[str(idx)] = {
+            "label": _build_feature_label(c, steering_analysis),
+            "primary_variant": c.get("primary_variant"),
+            "cohens_d": c.get("cohens_d"),
+            "category": "steering",
+            "slider": {"min": -5, "max": 5, "step": 0.5, "default": 0},
+            "monotonicity": _get_monotonicity_data(str(idx), steering_analysis),
+        }
 
     for idx in candidates_data.get("random_control_features", []):
-        feature_labels[str(idx)] = f"random control #{idx}"
+        feature_registry[str(idx)] = {
+            "label": f"random control #{idx}",
+            "category": "control",
+            "slider": {"min": -5, "max": 5, "step": 0.5, "default": 0},
+        }
 
-    print(f"Serving {len(feature_labels)} features:")
-    for fid, label in feature_labels.items():
-        print(f"  {fid}: {label}")
+    # --- Pre-compute logit attribution for each feature ---
+    print("Computing logit attribution for features...")
+    lm_head_weight = model.lm_head.weight  # shape (vocab_size, d_model)
+    with torch.no_grad():
+        for fid_str in feature_registry:
+            feat_id = int(fid_str)
+            direction = sae.W_dec[feat_id].to(device=lm_head_weight.device, dtype=lm_head_weight.dtype)
+            logit_effect = direction @ lm_head_weight.T  # shape (vocab_size,)
+
+            # Top-10 promoted (highest logit effect)
+            top_vals, top_ids = torch.topk(logit_effect, k=10)
+            promoted_tokens = tokenizer.convert_ids_to_tokens(top_ids.tolist())
+            promoted = []
+            for tok, val in zip(promoted_tokens, top_vals.tolist()):
+                # Skip special tokens (starting with < or common padding)
+                if tok.startswith("<") or tok.strip() == "":
+                    continue
+                promoted.append({"token": tok, "logit": round(val, 4)})
+
+            # Top-10 suppressed (lowest logit effect)
+            bot_vals, bot_ids = torch.topk(logit_effect, k=10, largest=False)
+            suppressed_tokens = tokenizer.convert_ids_to_tokens(bot_ids.tolist())
+            suppressed = []
+            for tok, val in zip(suppressed_tokens, bot_vals.tolist()):
+                if tok.startswith("<") or tok.strip() == "":
+                    continue
+                suppressed.append({"token": tok, "logit": round(val, 4)})
+
+            feature_registry[fid_str]["logit_attribution"] = {
+                "promoted": promoted[:10],
+                "suppressed": suppressed[:10],
+            }
+    print("Logit attribution computed.")
+
+    print(f"Serving {len(feature_registry)} features:")
+    for fid, entry in feature_registry.items():
+        print(f"  {fid}: {entry['label']}")
+
+    # --- Load feature map if configured ---
+    if FEATURE_MAP and Path(FEATURE_MAP).exists():
+        print(f"Loading feature map from {FEATURE_MAP}...")
+        with open(FEATURE_MAP) as f:
+            feature_map_data = json.load(f)
+        print(f"Feature map loaded.")
 
     yield
 
@@ -197,24 +264,80 @@ app.add_middleware(
 
 @app.get("/features")
 def get_features():
-    """Return available feature labels. Same contract as server.py."""
-    return feature_labels
+    """Return available feature registry with enriched metadata."""
+    return feature_registry
 
 
 @app.get("/info")
 def get_info():
-    """Return server configuration (model, layer, SAE size)."""
+    """Return server configuration (model, layer, SAE size, capabilities)."""
     return {
         "model": MODEL_PATH,
         "steer_layer": STEER_LAYER,
         "d_sae": sae.d_sae if sae else 0,
         "max_new_tokens": MAX_NEW_TOKENS,
+        "capabilities": {
+            "token_activations": True,
+            "alpha_sweep": True,
+            "feature_map": bool(FEATURE_MAP),
+            "enriched_features": True,
+            "density": True,
+        },
     }
+
+
+@app.get("/feature_map")
+def get_feature_map():
+    """Return the feature map data, if available."""
+    if feature_map_data is None:
+        raise HTTPException(status_code=404, detail="Feature map not available")
+    return feature_map_data
+
+
+def _compute_activation_stats(
+    token_activations_list: list[dict], active: list[tuple[int, float]]
+) -> dict:
+    """Compute per-feature activation summary statistics across all tokens."""
+    stats = {}
+    for feat_id, _ in active:
+        feat_id_str = str(feat_id)
+        values = []
+        for tok in token_activations_list:
+            v = tok["activations"].get(feat_id_str, 0)
+            if v != 0:
+                values.append(v)
+        if values:
+            stats[feat_id_str] = {
+                "count": len(values),
+                "total_tokens": len(token_activations_list),
+                "sparsity": 1 - len(values) / len(token_activations_list),
+                "mean": sum(values) / len(values),
+                "max": max(values),
+                "min": min(values),
+            }
+    return stats
+
+
+def _compute_top_activating_tokens(
+    token_activations_list: list[dict], active: list[tuple[int, float]]
+) -> dict:
+    """Find the top-10 tokens with highest activation for each active feature."""
+    top_tokens = {}
+    for feat_id, _ in active:
+        feat_id_str = str(feat_id)
+        token_acts = []
+        for tok in token_activations_list:
+            v = tok["activations"].get(feat_id_str, 0)
+            if v != 0:
+                token_acts.append({"token": tok["token"], "activation": v})
+        token_acts.sort(key=lambda x: x["activation"], reverse=True)
+        top_tokens[feat_id_str] = token_acts[:10]
+    return top_tokens
 
 
 @app.post("/generate")
 def generate(req: GenerateRequest):
-    """Generate baseline and steered text. Same contract as server.py."""
+    """Generate baseline and steered text with optional activation capture, density, and alpha sweep."""
     assert model is not None and tokenizer is not None and sae is not None
 
     device = next(model.parameters()).device
@@ -241,7 +364,10 @@ def generate(req: GenerateRequest):
     active = [(f.id, f.strength) for f in req.features if f.strength != 0]
 
     if not active:
-        return {"baseline": baseline_text, "steered": baseline_text}
+        response = {"baseline": baseline_text, "steered": baseline_text}
+        response["baseline_density"] = compute_all_densities(baseline_text)
+        response["steered_density"] = compute_all_densities(baseline_text)
+        return response
 
     # Validate feature IDs
     d_sae = sae.W_dec.shape[0]
@@ -252,21 +378,110 @@ def generate(req: GenerateRequest):
                 detail=f"Feature ID {feat_id} out of range [0, {d_sae})",
             )
 
+    active_feat_ids = set(feat_id for feat_id, _ in active)
+
     # Compute combined steering direction (sum of all active feature directions)
     combined_direction = torch.zeros(sae.W_dec.shape[1], device=device, dtype=torch.float16)
     with torch.no_grad():
         for feat_id, strength in active:
             combined_direction += strength * sae.W_dec[feat_id].to(device=device, dtype=torch.float16)
 
-    # Attach decode-only steering hook at the configured layer
-    hook_fn = make_steering_hook(combined_direction, alpha=1.0)  # strength already in direction
-    handle = model.model.layers[STEER_LAYER].register_forward_hook(hook_fn)
+    # --- Helper: generate with a given direction and optional activation capture ---
+    def _generate_with_direction(direction: torch.Tensor, alpha: float, capture_activations: bool):
+        """Generate text with a steering hook. Returns (text, token_activations_or_None)."""
+        hook_fn = make_steering_hook(direction, alpha=alpha)
+        handle = model.model.layers[STEER_LAYER].register_forward_hook(hook_fn)
 
-    try:
-        with torch.no_grad():
-            steered_ids = model.generate(**inputs, **gen_kwargs)
-        steered_text = tokenizer.decode(steered_ids[0][prompt_len:], skip_special_tokens=True)
-    finally:
-        handle.remove()
+        captured_hidden_states: list[torch.Tensor] = []
+        capture_handle = None
 
-    return {"baseline": baseline_text, "steered": steered_text}
+        if capture_activations and active_feat_ids:
+            def capture_hook(module, args, output):
+                is_tuple = isinstance(output, tuple)
+                hidden_states = output[0] if is_tuple else output
+                if hidden_states.shape[1] == 1:
+                    # Decode step: capture hidden states (detach + clone to avoid memory issues)
+                    captured_hidden_states.append(hidden_states.detach().clone().squeeze(1))
+                return output
+
+            capture_handle = model.model.layers[STEER_LAYER].register_forward_hook(capture_hook)
+
+        try:
+            with torch.no_grad():
+                gen_ids = model.generate(**inputs, **gen_kwargs)
+            text = tokenizer.decode(gen_ids[0][prompt_len:], skip_special_tokens=True)
+        finally:
+            handle.remove()
+            if capture_handle is not None:
+                capture_handle.remove()
+
+        # Build token activations if captured
+        token_activations = None
+        if capture_activations and active_feat_ids and captured_hidden_states:
+            stacked = torch.cat(captured_hidden_states, dim=0)  # (n_tokens, d_model)
+            with torch.no_grad():
+                _x_hat, _topk_latents, sae_info = sae.forward(stacked)
+            topk_indices = sae_info["topk_indices"]  # (n_tokens, k)
+            topk_values = sae_info["topk_values"]    # (n_tokens, k)
+
+            # Get generated token IDs (excluding prompt)
+            generated_token_ids = gen_ids[0][prompt_len:].tolist()
+            token_strings = tokenizer.convert_ids_to_tokens(generated_token_ids)
+
+            n_tokens = min(len(token_strings), topk_indices.shape[0])
+            token_activations = []
+            for pos in range(n_tokens):
+                pos_indices = topk_indices[pos].tolist()
+                pos_values = topk_values[pos].tolist()
+                # Check which active features fired at this position
+                active_at_pos = {}
+                for i, feat_idx in enumerate(pos_indices):
+                    if feat_idx in active_feat_ids:
+                        active_at_pos[str(feat_idx)] = pos_values[i]
+                token_activations.append({
+                    "token": token_strings[pos],
+                    "activations": active_at_pos,
+                })
+
+        return text, token_activations
+
+    # --- Main steered generation (alpha=1.0, strength already baked into direction) ---
+    steered_text, steered_token_activations = _generate_with_direction(
+        combined_direction, alpha=1.0, capture_activations=req.include_activations
+    )
+
+    response = {"baseline": baseline_text, "steered": steered_text}
+
+    if req.include_activations and steered_token_activations is not None:
+        response["token_activations"] = steered_token_activations
+
+        # --- Activation stats per feature ---
+        response["activation_stats"] = _compute_activation_stats(steered_token_activations, active)
+
+        # --- Top activating tokens per feature ---
+        response["top_activating_tokens"] = _compute_top_activating_tokens(steered_token_activations, active)
+
+    # --- Density computation ---
+    response["baseline_density"] = compute_all_densities(baseline_text)
+    response["steered_density"] = compute_all_densities(steered_text)
+
+    # --- Alpha sweep ---
+    if req.alphas is not None:
+        # Compute a base direction WITHOUT strength multiplication
+        # (just the sum of W_dec[feat_id] for each active feature, weighted by strength but NOT by alpha)
+        # The combined_direction already has strength baked in, so we use it as the base direction.
+        # Each alpha in the sweep multiplies this base direction.
+        sweep_results = []
+        for alpha_val in req.alphas:
+            sweep_text, sweep_token_activations = _generate_with_direction(
+                combined_direction, alpha=alpha_val, capture_activations=req.include_activations
+            )
+            sweep_entry = {"alpha": alpha_val, "text": sweep_text}
+            if req.include_activations and sweep_token_activations is not None:
+                sweep_entry["token_activations"] = sweep_token_activations
+                sweep_entry["activation_stats"] = _compute_activation_stats(sweep_token_activations, active)
+                sweep_entry["top_activating_tokens"] = _compute_top_activating_tokens(sweep_token_activations, active)
+            sweep_results.append(sweep_entry)
+        response["sweep_results"] = sweep_results
+
+    return response

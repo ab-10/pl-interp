@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Feature Steering — Mistral 7B",
-  description: "Steer Mistral 7B code generation with SAE feature sliders",
+  title: "Feature Steering",
+  description: "Steer code generation with SAE feature sliders",
 };
 
 export default function RootLayout({

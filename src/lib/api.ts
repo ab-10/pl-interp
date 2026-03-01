@@ -1,32 +1,95 @@
-import { Feature, FeatureOverride, GenerateResponse } from "./types";
+import {
+  EnrichedFeature,
+  EnrichedGenerateResponse,
+  FeatureMapPoint,
+  FeatureOverride,
+  ServerInfo,
+} from "./types";
 
 const API_BASE = "/api/backend";
 
-export async function fetchFeatures(): Promise<Feature[]> {
+/** Detect whether the /features response is enriched (objects) or flat (strings). */
+function isEnrichedResponse(data: Record<string, unknown>): boolean {
+  const first = Object.values(data)[0];
+  return typeof first === "object" && first !== null;
+}
+
+/** Fetch available steering features. Handles both enriched and flat formats. */
+export async function fetchFeatures(): Promise<EnrichedFeature[]> {
   const res = await fetch(`${API_BASE}/features`);
   if (!res.ok) {
     throw new Error(`Failed to fetch features: ${res.statusText}`);
   }
-  const data: Record<string, string> = await res.json();
+  const data = await res.json();
+
+  if (isEnrichedResponse(data)) {
+    return Object.entries(data).map(([id, value]: [string, unknown]) => {
+      const v = value as Record<string, unknown>;
+      return {
+        id: Number(id),
+        label: (v.label as string) ?? `Feature ${id}`,
+        primary_variant: v.primary_variant as string | undefined,
+        cohens_d: v.cohens_d as number | undefined,
+        category: v.category as "steering" | "control" | undefined,
+        slider: v.slider as EnrichedFeature["slider"],
+        monotonicity: v.monotonicity as EnrichedFeature["monotonicity"],
+      };
+    });
+  }
+
+  // Community server: flat {id: label} format
   return Object.entries(data).map(([id, label]) => ({
     id: Number(id),
-    label,
+    label: label as string,
   }));
 }
 
+/** Generate baseline and steered completions with optional enrichment. */
 export async function generateCompletion(
   prompt: string,
   features: FeatureOverride[],
-  temperature: number = 0.3
-): Promise<GenerateResponse> {
+  temperature: number = 0.3,
+  options?: { includeActivations?: boolean; alphas?: number[] },
+): Promise<EnrichedGenerateResponse> {
   const activeFeatures = features.filter((f) => f.strength !== 0);
+  const body: Record<string, unknown> = {
+    prompt,
+    features: activeFeatures,
+    temperature,
+  };
+  if (options?.includeActivations) body.include_activations = true;
+  if (options?.alphas) body.alphas = options.alphas;
+
   const res = await fetch(`${API_BASE}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, features: activeFeatures, temperature }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     throw new Error(`Generation failed: ${res.statusText}`);
   }
   return res.json();
+}
+
+/** Fetch server info and capabilities. Returns null if unavailable. */
+export async function fetchServerInfo(): Promise<ServerInfo | null> {
+  try {
+    const res = await fetch(`${API_BASE}/info`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch pre-computed UMAP feature map. Returns null if unavailable. */
+export async function fetchFeatureMap(): Promise<FeatureMapPoint[] | null> {
+  try {
+    const res = await fetch(`${API_BASE}/feature_map`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.features ?? null;
+  } catch {
+    return null;
+  }
 }
