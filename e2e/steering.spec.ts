@@ -2,16 +2,18 @@ import { test, expect } from "@playwright/test";
 
 /** Mock /features response — flat dict of feature labels. */
 const MOCK_FEATURES = {
-  "100": "Type annotations (Python/TypeScript)",
-  "200": "Error handling patterns",
-  "300": "Recursive patterns",
+  "13176": "Type annotations",
+  "9742": "Error handling",
+  "16290": "Recursive patterns",
+  "9344": "Verbose comments & documentation",
+  "16149": "Functional style (map/filter/lambda)",
 };
 
 /** Mock /info response. */
 const MOCK_INFO = {
-  model: "mistralai/Mistral-7B-Instruct-v0.3",
-  sae: "sae_checkpoint.pt",
-  layer: 16,
+  model: "mistralai/Ministral-8B-Instruct-2410",
+  sae: "layer_18_sae_checkpoint.pt",
+  layer: 18,
 };
 
 /** Mock /generate response. */
@@ -41,13 +43,13 @@ test.describe("Feature Steering App", () => {
     // Header
     await expect(page.locator("h1")).toHaveText("Feature Steering");
     await expect(
-      page.getByText("Steer Mistral 7B code generation")
+      page.getByText("Steer Ministral 8B code generation")
     ).toBeVisible();
 
     // Prompt input with default value
     const textarea = page.locator("textarea");
     await expect(textarea).toBeVisible();
-    await expect(textarea).toHaveValue("def fibonacci(n):");
+    await expect(textarea).toHaveValue("Write a Python function that merges two sorted lists.");
 
     // Generate button
     await expect(
@@ -60,9 +62,9 @@ test.describe("Feature Steering App", () => {
     await page.goto("/");
 
     await expect(
-      page.getByText("Model: mistralai/Mistral-7B-Instruct-v0.3")
+      page.getByText("Model: mistralai/Ministral-8B-Instruct-2410")
     ).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("SAE: sae_checkpoint.pt (layer 16)")).toBeVisible();
+    await expect(page.getByText("SAE: layer_18_sae_checkpoint.pt (layer 18)")).toBeVisible();
   });
 
   test("features load as flat list", async ({ page }) => {
@@ -71,14 +73,16 @@ test.describe("Feature Steering App", () => {
 
     // Feature labels
     await expect(
-      page.getByText("Type annotations (Python/TypeScript)")
+      page.getByText("Type annotations")
     ).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Error handling patterns")).toBeVisible();
+    await expect(page.getByText("Error handling")).toBeVisible();
     await expect(page.getByText("Recursive patterns")).toBeVisible();
+    await expect(page.getByText("Verbose comments & documentation")).toBeVisible();
+    await expect(page.getByText("Functional style (map/filter/lambda)")).toBeVisible();
 
-    // Temperature slider + 3 feature sliders = 4 range inputs
+    // Temperature slider + 5 feature sliders = 6 range inputs
     const sliders = page.locator('input[type="range"]');
-    await expect(sliders).toHaveCount(4);
+    await expect(sliders).toHaveCount(6);
   });
 
   test("feature sliders default to 0 and can be adjusted", async ({
@@ -93,7 +97,7 @@ test.describe("Feature Steering App", () => {
       'input[type="range"][min="-10"][max="10"]'
     );
     const count = await featureSliders.count();
-    expect(count).toBe(3);
+    expect(count).toBe(5);
 
     for (let i = 0; i < count; i++) {
       await expect(featureSliders.nth(i)).toHaveValue("0");

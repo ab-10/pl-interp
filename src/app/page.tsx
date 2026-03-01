@@ -9,7 +9,7 @@ import ResultsPanel from "@/components/ResultsPanel";
 import ErrorBanner from "@/components/ErrorBanner";
 
 export default function Home() {
-  const [prompt, setPrompt] = useState("def fibonacci(n):");
+  const [prompt, setPrompt] = useState("Write a Python function that merges two sorted lists.");
   const [features, setFeatures] = useState<Feature[]>([]);
   const [strengths, setStrengths] = useState<Record<number, number>>({});
   const [baseline, setBaseline] = useState<string | null>(null);
@@ -80,12 +80,12 @@ export default function Home() {
           Feature Steering
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Steer Mistral 7B code generation with SAE feature sliders
+          Steer Ministral 8B code generation with SAE feature sliders
         </p>
         {info && (
           <div className="mt-1 flex gap-4 text-xs font-mono text-zinc-400 dark:text-zinc-500">
             <span>Model: {info.model}</span>
-            <span>SAE: {info.sae} (layer {info.layer})</span>
+            <span>SAE: {info.sae}{info.layer != null ? ` (layer ${info.layer})` : ""}</span>
           </div>
         )}
       </header>

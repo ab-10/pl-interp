@@ -41,10 +41,6 @@ class ModelConfig:
 
 
 MODELS: dict[str, ModelConfig] = {
-    "mistral-7b": ModelConfig(
-        model_id="mistralai/Mistral-7B-Instruct-v0.3",
-        num_layers=32,
-    ),
     "ministral-8b": ModelConfig(
         model_id="mistralai/Ministral-8B-Instruct-2410",
         num_layers=36,

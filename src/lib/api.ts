@@ -1,4 +1,4 @@
-import { BackendInfo, Feature, FeatureOverride, GenerateResponse } from "./types";
+import { AnalyzeResponse, BackendInfo, Feature, FeatureOverride, GenerateResponse } from "./types";
 
 const API_BASE = "/api/backend";
 
@@ -7,13 +7,11 @@ export async function fetchFeatures(): Promise<Feature[]> {
   if (!res.ok) {
     throw new Error(`Failed to fetch features: ${res.statusText}`);
   }
-  // Response shape: { "304": "label", "512": "label", ... }
   const data: Record<string, string> = await res.json();
-  const features: Feature[] = [];
-  for (const [id, label] of Object.entries(data)) {
-    features.push({ id: Number(id), label });
-  }
-  return features;
+  return Object.entries(data).map(([id, label]) => ({
+    id: Number(id),
+    label,
+  }));
 }
 
 export async function fetchInfo(): Promise<BackendInfo> {
@@ -37,6 +35,27 @@ export async function generateCompletion(
   });
   if (!res.ok) {
     throw new Error(`Generation failed: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function analyzeFeature(
+  prompt: string,
+  featureId: number,
+  steering: FeatureOverride[] = []
+): Promise<AnalyzeResponse> {
+  const activeSteering = steering.filter((f) => f.strength !== 0);
+  const res = await fetch(`${API_BASE}/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prompt,
+      feature_id: featureId,
+      steering: activeSteering,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Analysis failed: ${res.statusText}`);
   }
   return res.json();
 }
