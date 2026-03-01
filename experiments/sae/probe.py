@@ -21,9 +21,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import accuracy_score, roc_auc_score
+import torch.nn as nn
 
 from experiments import config
 from experiments.sae.model import TopKSAE
@@ -102,6 +100,7 @@ def train_probe(
     activations_dir: Path,
     output_dir: Path,
     device: str = "cuda",
+    layer: int | None = None,
 ) -> Path:
     """Train a logistic regression probe on SAE features to predict pass/fail.
 
@@ -132,7 +131,7 @@ def train_probe(
         if i % 2000 == 0:
             logger.info("Encoding record %d / %d", i, len(records))
 
-        features = _get_record_sae_features(record, sae, readers, device)
+        features = _get_record_sae_features(record, sae, readers, device, layer=layer)
         if features is None:
             skipped += 1
             continue
@@ -149,36 +148,64 @@ def train_probe(
     n_fail = len(y) - n_pass
     logger.info("Pass: %d, Fail: %d (%.1f%% pass rate)", n_pass, n_fail, 100 * n_pass / len(y))
 
-    # Train logistic regression with cross-validated regularization
-    # Use saga solver (efficient for large n and large d) with float32
-    X = X.astype(np.float32)
-    logger.info("Training logistic regression probe (3-fold CV, saga solver)...")
-    probe = LogisticRegressionCV(
-        Cs=5,
-        cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42),
-        penalty="l2",
-        solver="saga",
-        scoring="accuracy",
-        max_iter=500,
-        n_jobs=4,
-        random_state=42,
-    )
-    probe.fit(X, y)
+    # Train logistic regression on GPU (much faster than sklearn for 16k features)
+    X_t = torch.from_numpy(X).float().to(device)
+    y_t = torch.from_numpy(y).float().to(device)
 
-    # Evaluate
-    y_pred = probe.predict(X)
-    y_prob = probe.predict_proba(X)[:, 1]
-    train_acc = accuracy_score(y, y_pred)
-    train_auc = roc_auc_score(y, y_prob)
-    cv_acc = probe.scores_[1].mean()  # mean CV accuracy for the chosen C
+    # Simple linear probe: w @ x + b → sigmoid → BCE loss + L2 reg
+    probe_w = torch.zeros(d_sae, device=device, requires_grad=True)
+    probe_b = torch.zeros(1, device=device, requires_grad=True)
+    weight_decay = 1e-3
+    lr_probe = 1e-2
+    n_epochs = 200
+    batch_sz = 4096
+
+    optimizer = torch.optim.Adam([probe_w, probe_b], lr=lr_probe)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, n_epochs)
+
+    logger.info("Training logistic probe on GPU (%d epochs, wd=%.4f)...", n_epochs, weight_decay)
+
+    n = X_t.shape[0]
+    for epoch in range(n_epochs):
+        perm = torch.randperm(n, device=device)
+        epoch_loss = 0.0
+        n_batches = 0
+        for i in range(0, n, batch_sz):
+            idx = perm[i : i + batch_sz]
+            logits = X_t[idx] @ probe_w + probe_b
+            loss = nn.functional.binary_cross_entropy_with_logits(logits, y_t[idx])
+            loss = loss + weight_decay * probe_w.pow(2).sum()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            epoch_loss += loss.item()
+            n_batches += 1
+        scheduler.step()
+        if epoch % 50 == 0 or epoch == n_epochs - 1:
+            with torch.no_grad():
+                logits_all = X_t @ probe_w + probe_b
+                preds = (logits_all > 0).float()
+                acc = (preds == y_t).float().mean().item()
+                probs = torch.sigmoid(logits_all)
+            logger.info("  epoch %d: loss=%.4f, acc=%.4f", epoch, epoch_loss / n_batches, acc)
+
+    # Final evaluation
+    with torch.no_grad():
+        logits_all = X_t @ probe_w + probe_b
+        preds = (logits_all > 0).float()
+        train_acc = (preds == y_t).float().mean().item()
+        probs = torch.sigmoid(logits_all)
+        # AUC
+        y_np = y_t.cpu().numpy()
+        p_np = probs.cpu().numpy()
+        from sklearn.metrics import roc_auc_score
+        train_auc = roc_auc_score(y_np, p_np)
 
     logger.info("Probe train accuracy: %.3f", train_acc)
     logger.info("Probe train AUC: %.3f", train_auc)
-    logger.info("Probe CV accuracy: %.3f", cv_acc)
-    logger.info("Best C (regularization): %.4f", probe.C_[0])
 
     # Extract weight vector in SAE feature space: w ∈ R^{d_sae}
-    w_sae = probe.coef_[0]  # (d_sae,)
+    w_sae = probe_w.detach().cpu().numpy()
 
     # Project back to hidden-state space: direction = w @ W_dec → (d_model,)
     # W_dec is (d_sae, d_model), so w_sae @ W_dec gives (d_model,)
@@ -222,8 +249,8 @@ def train_probe(
     stats = {
         "train_accuracy": round(train_acc, 4),
         "train_auc": round(train_auc, 4),
-        "cv_accuracy": round(cv_acc, 4),
-        "best_C": float(probe.C_[0]),
+        "weight_decay": weight_decay,
+        "n_epochs": n_epochs,
         "n_records": len(X_list),
         "n_pass": int(n_pass),
         "n_fail": int(n_fail),
@@ -248,6 +275,7 @@ def main() -> int:
     parser.add_argument("--generations-dir", type=Path, default=config.GENERATIONS_DIR)
     parser.add_argument("--activations-dir", type=Path, default=config.ACTIVATIONS_DIR)
     parser.add_argument("--output-dir", type=Path, default=config.ANALYSIS_DIR)
+    parser.add_argument("--layer", type=int, default=None, help="Layer to use for activations")
     parser.add_argument("--device", type=str, default="cuda")
     args = parser.parse_args()
 
@@ -257,6 +285,7 @@ def main() -> int:
         activations_dir=args.activations_dir,
         output_dir=args.output_dir,
         device=args.device,
+        layer=args.layer,
     )
     print(f"\nProbe direction saved to: {direction_path}")
     return 0
