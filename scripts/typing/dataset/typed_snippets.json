@@ -1,0 +1,1322 @@
+[
+  {
+    "pair_id": "ts_simple_functions_000",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function calculateAreaOfCircle(radius: number): number {\n    const pi: number = 3.14159;\n    const area: number = pi * radius * radius;\n    return parseFloat(area.toFixed(2));\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_001",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function concatenateWithSpace(first: string, second: string): string {\n    const separator: string = \" \";\n    const result: string = first.trim() + separator + second.trim();\n    return result;\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_002",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function isEven(num: number): boolean {\n    const remainder: number = num % 2;\n    const result: boolean = remainder === 0;\n    return result;\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_003",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function convertCelsiusToFahrenheit(celsius: number): number {\n    const multiplier: number = 9 / 5;\n    const offset: number = 32;\n    const fahrenheit: number = (celsius * multiplier) + offset;\n    return parseFloat(fahrenheit.toFixed(1));\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_004",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function startsWithVowel(input: string): boolean {\n    const vowels: string[] = [\"a\", \"e\", \"i\", \"o\", \"u\"];\n    const firstChar: string = input[0].toLowerCase();\n    const isVowel: boolean = vowels.includes(firstChar);\n    return isVowel;\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_005",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function calculateDiscount(originalPrice: number, discountPercentage: number): number {\n    const discountFactor: number = discountPercentage / 100;\n    const discountAmount: number = originalPrice * discountFactor;\n    const finalPrice: number = originalPrice - discountAmount;\n    return parseFloat(finalPrice.toFixed(2));\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_006",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function isLongEnough(input: string, minLength: number): boolean {\n    const actualLength: number = input.length;\n    const meetsRequirement: boolean = actualLength >= minLength;\n    return meetsRequirement;\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_007",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function getFirstHalf(text: string): string {\n    const length: number = text.length;\n    const halfIndex: number = Math.floor(length / 2);\n    const firstHalf: string = text.substring(0, halfIndex);\n    return firstHalf;\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_008",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function isPositiveNumber(value: number): boolean {\n    const zero: number = 0;\n    const result: boolean = value > zero;\n    return result;\n}"
+  },
+  {
+    "pair_id": "ts_simple_functions_009",
+    "category": "simple_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function formatGreeting(name: string, isFormal: boolean): string {\n    const greetingBase: string = isFormal ? \"Hello\" : \"Hey\";\n    const punctuation: string = isFormal ? \",\" : \"!\";\n    const formattedGreeting: string = `${greetingBase}${punctuation} ${name}`;\n    return formattedGreeting;\n}"
+  },
+  {
+    "pair_id": "ts_data_structures_000",
+    "category": "data_structures",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface UserProfile {\n    id: string;\n    username: string;\n    email: string;\n    isActive: boolean;\n    lastLogin: Date;\n    preferences: {\n        theme: 'light' | 'dark' | 'system';\n        notifications: boolean;\n    };\n}\n\nfunction createUserProfile(\n    username: string,\n    email: string,\n    isActive: boolean = true\n): UserProfile {\n    return {\n        id: crypto.randomUUID(),\n        username,\n        email,\n        isActive,\n        lastLogin: new Date(),\n        preferences: {\n            theme: 'system',\n            notifications: true,\n        },\n    };\n}"
+  },
+  {
+    "pair_id": "ts_data_structures_001",
+    "category": "data_structures",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface DatabaseConfig {\n    host: string;\n    port: number;\n    username: string;\n    password: string;\n    database: string;\n    ssl?: boolean;\n    pool?: {\n        max: number;\n        min: number;\n        idle: number;\n    };\n}\n\nfunction validateDatabaseConfig(\n    config: DatabaseConfig\n): { isValid: boolean; errors: string[] } {\n    const errors: string[] = [];\n    if (!config.host) errors.push(\"Host is required\");\n    if (config.port < 1 || config.port > 65535) errors.push(\"Invalid port\");\n    return { isValid: errors.length === 0, errors };\n}"
+  },
+  {
+    "pair_id": "ts_data_structures_002",
+    "category": "data_structures",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface ApiResponse<T> {\n    status: 'success' | 'error' | 'pending';\n    data: T | null;\n    error: {\n        code: number;\n        message: string;\n    } | null;\n    timestamp: Date;\n}\n\nfunction createSuccessResponse<T>(\n    data: T,\n    timestamp: Date = new Date()\n): ApiResponse<T> {\n    return {\n        status: 'success',\n        data,\n        error: null,\n        timestamp,\n    };\n}\n\nfunction createErrorResponse(\n    code: number,\n    message: string,\n    timestamp: Date = new Date()\n): ApiResponse<never> {\n    return {\n        status: 'error',\n        data: null,\n        error: { code, message },\n        timestamp,\n    };\n}"
+  },
+  {
+    "pair_id": "ts_data_structures_003",
+    "category": "data_structures",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface Product {\n    id: string;\n    name: string;\n    price: number;\n    category: 'electronics' | 'clothing' | 'food' | 'books';\n    inStock: boolean;\n    metadata: Record<string, string | number | boolean>;\n}\n\nfunction applyDiscount(\n    product: Product,\n    discountPercentage: number\n): Product {\n    if (discountPercentage < 0 || discountPercentage > 100) {\n        throw new Error(\"Discount must be between 0 and 100\");\n    }\n    return {\n        ...product,\n        price: product.price * (1 - discountPercentage / 100),\n    };\n}"
+  },
+  {
+    "pair_id": "ts_data_structures_004",
+    "category": "data_structures",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface CacheEntry<T> {\n    key: string;\n    value: T;\n    expiresAt: Date | null;\n    tags: string[];\n}\n\ninterface CacheConfig {\n    maxSize: number;\n    defaultTTL: number | null;\n    cleanupInterval: number;\n}\n\nclass TypedCache<T> {\n    private entries: Map<string, CacheEntry<T>> = new Map();\n    constructor(private config: CacheConfig) {}\n\n    public set(\n        key: string,\n        value: T,\n        ttl: number | null = this.config.defaultTTL,\n        tags: string[] = []\n    ): void {\n        const expiresAt: Date | null = ttl ? new Date(Date.now() + ttl) : null;\n        this.entries.set(key, { key, value, expiresAt, tags });\n        if (this.entries.size > this.config.maxSize) {\n            this.entries.delete(this.entries.keys().next().value);\n        }\n    }\n}"
+  },
+  {
+    "pair_id": "ts_generics_000",
+    "category": "generics",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function identity<T>(arg: T): T {\n    return arg;\n}\n\nconst output = identity<string>(\"Hello, TypeScript!\");\nconst numOutput = identity<number>(42);"
+  },
+  {
+    "pair_id": "ts_generics_001",
+    "category": "generics",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class KeyValuePair<K extends string | number, V> {\n    constructor(public key: K, public value: V) {}\n\n    logPair(): void {\n        console.log(`Key: ${this.key}, Value: ${this.value}`);\n    }\n}\n\nconst pair = new KeyValuePair<string, boolean>(\"isActive\", true);"
+  },
+  {
+    "pair_id": "ts_generics_002",
+    "category": "generics",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function createMap<K extends string | number, V>(\n    keys: K[],\n    values: V[]\n): Map<K, V> {\n    if (keys.length !== values.length) {\n        throw new Error(\"Keys and values must have the same length\");\n    }\n    return new Map<K, V>(keys.map((key, i) => [key, values[i]]));\n}\n\nconst myMap = createMap(\n    [\"a\", \"b\"],\n    [1, 2]\n);"
+  },
+  {
+    "pair_id": "ts_generics_003",
+    "category": "generics",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class ApiResponse<T extends { id: number }, M extends string> {\n    constructor(\n        public data: T,\n        public message: M,\n        public status: number\n    ) {}\n\n    log(): void {\n        console.log(`[${this.status}] ${this.message}:`, this.data);\n    }\n}\n\nconst response = new ApiResponse(\n    { id: 1, title: \"Post\" },\n    \"Success\",\n    200\n);"
+  },
+  {
+    "pair_id": "ts_generics_004",
+    "category": "generics",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function createTuple<T, U, V>(\n    first: T,\n    second: U,\n    third: V\n): [T, U, V] {\n    return [first, second, third];\n}\n\nconst myTuple = createTuple<string, number, boolean>(\n    \"TypeScript\",\n    42,\n    true\n);"
+  },
+  {
+    "pair_id": "ts_union_types_000",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function formatValue(input: string | number, precision?: number): string {\n    if (input === null || input === undefined) {\n        throw new Error(\"Input cannot be null or undefined\");\n    }\n    if (typeof input === \"number\") {\n        return precision !== undefined ? input.toFixed(precision) : input.toString();\n    }\n    return input.trim();\n}"
+  },
+  {
+    "pair_id": "ts_union_types_001",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function calculateDiscount(price: number, discountRate: string | number, isPercentage: boolean = true): number {\n    if (price <= 0) return 0;\n    const rate: number = typeof discountRate === \"string\" ? parseFloat(discountRate) : discountRate;\n    if (isNaN(rate) || rate <= 0) return price;\n    return isPercentage ? price * (1 - rate / 100) : price - rate;\n}"
+  },
+  {
+    "pair_id": "ts_union_types_002",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function parseUserInput(input: string | number | null, defaultValue: string = \"\"): string {\n    if (input === null) return defaultValue;\n    return typeof input === \"string\" ? input : input.toString();\n}"
+  },
+  {
+    "pair_id": "ts_union_types_003",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function createUserId(name: string, id: string | number, suffix?: string): string {\n    const baseId: string = typeof id === \"string\" ? id : id.toString(36);\n    const fullSuffix: string = suffix ? `-${suffix}` : \"\";\n    return `${name.toLowerCase()}_${baseId}${fullSuffix}`;\n}"
+  },
+  {
+    "pair_id": "ts_union_types_004",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function validateScore(score: string | number | null, maxScore: number = 100): boolean {\n    if (score === null) return false;\n    const numericScore: number = typeof score === \"string\" ? parseFloat(score) : score;\n    return !isNaN(numericScore) && numericScore >= 0 && numericScore <= maxScore;\n}"
+  },
+  {
+    "pair_id": "ts_union_types_005",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function formatDuration(seconds: number, unit?: \"seconds\" | \"minutes\" | \"hours\"): string {\n    if (seconds < 0) return \"Invalid duration\";\n    const value: number = unit === \"minutes\" ? seconds / 60 :\n                          unit === \"hours\" ? seconds / 3600 : seconds;\n    return `${value.toFixed(2)} ${unit || \"seconds\"}`;\n}"
+  },
+  {
+    "pair_id": "ts_union_types_006",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function getDisplayName(user: { id: string | number; name?: string | null; username: string }): string {\n    if (user.name && user.name.trim() !== \"\") {\n        return user.name;\n    }\n    return `User#${typeof user.id === \"string\" ? user.id : user.id.toString(16)}`;\n}"
+  },
+  {
+    "pair_id": "ts_union_types_007",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function convertMeasurement(value: string | number, fromUnit: string, toUnit: string): number | null {\n    if (typeof value === \"string\" && isNaN(parseFloat(value))) return null;\n    const numericValue: number = typeof value === \"string\" ? parseFloat(value) : value;\n    if (fromUnit === toUnit) return numericValue;\n    if (fromUnit === \"cm\" && toUnit === \"m\") return numericValue / 100;\n    if (fromUnit === \"kg\" && toUnit === \"g\") return numericValue * 1000;\n    return null;\n}"
+  },
+  {
+    "pair_id": "ts_union_types_008",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function generateReportTitle(baseTitle: string, version: string | number, isDraft: boolean = false): string {\n    const versionStr: string = typeof version === \"string\" ? version : `v${version}`;\n    const draftSuffix: string = isDraft ? \" (DRAFT)\" : \"\";\n    return `${baseTitle} ${versionStr}${draftSuffix}`.trim();\n}"
+  },
+  {
+    "pair_id": "ts_union_types_009",
+    "category": "union_types",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function processPayment(amount: number, currency: string | null, method?: \"credit\" | \"debit\" | \"paypal\"): { success: boolean; message: string } {\n    if (amount <= 0) return { success: false, message: \"Invalid amount\" };\n    if (!currency) return { success: false, message: \"Currency required\" };\n    const processedCurrency: string = currency.toUpperCase();\n    const paymentMethod: string = method ? method.toUpperCase() : \"UNKNOWN\";\n    return {\n        success: true,\n        message: `Processed ${amount} ${processedCurrency} via ${paymentMethod}`\n    };\n}"
+  },
+  {
+    "pair_id": "ts_classes_000",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class BankAccount {\n    private accountNumber: string;\n    private balance: number;\n\n    constructor(accountNumber: string, initialBalance: number = 0) {\n        this.accountNumber = accountNumber;\n        this.balance = initialBalance;\n    }\n\n    public deposit(amount: number): number {\n        if (amount <= 0) throw new Error(\"Deposit amount must be positive\");\n        this.balance += amount;\n        return this.balance;\n    }\n\n    public getAccountInfo(): { accountNumber: string; balance: number } {\n        return { accountNumber: this.accountNumber, balance: this.balance };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_001",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class TemperatureConverter {\n    private readonly scale: 'Celsius' | 'Fahrenheit' | 'Kelvin';\n\n    constructor(scale: 'Celsius' | 'Fahrenheit' | 'Kelvin') {\n        this.scale = scale;\n    }\n\n    public convertToCelsius(value: number): number {\n        switch (this.scale) {\n            case 'Celsius': return value;\n            case 'Fahrenheit': return (value - 32) * 5/9;\n            case 'Kelvin': return value - 273.15;\n        }\n    }\n\n    public getScale(): 'Celsius' | 'Fahrenheit' | 'Kelvin' {\n        return this.scale;\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_002",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class ShoppingCart {\n    private items: Array<{ productId: string; quantity: number }> = [];\n\n    constructor(initialItems?: Array<{ productId: string; quantity: number }>) {\n        if (initialItems) this.items = [...initialItems];\n    }\n\n    public addItem(productId: string, quantity: number = 1): void {\n        const existingItem = this.items.find(item => item.productId === productId);\n        if (existingItem) {\n            existingItem.quantity += quantity;\n        } else {\n            this.items.push({ productId, quantity });\n        }\n    }\n\n    public getTotalItems(): number {\n        return this.items.reduce((sum, item) => sum + item.quantity, 0);\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_003",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class UserProfile {\n    private readonly username: string;\n    private email: string;\n    private isActive: boolean;\n\n    constructor(username: string, email: string, isActive: boolean = true) {\n        this.username = username;\n        this.email = email;\n        this.isActive = isActive;\n    }\n\n    public updateEmail(newEmail: string): boolean {\n        if (!newEmail.includes('@')) return false;\n        this.email = newEmail;\n        return true;\n    }\n\n    public toggleActiveStatus(): void {\n        this.isActive = !this.isActive;\n    }\n\n    public getStatus(): { username: string; isActive: boolean } {\n        return { username: this.username, isActive: this.isActive };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_004",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class Rectangle {\n    private width: number;\n    private height: number;\n\n    constructor(width: number, height: number) {\n        if (width <= 0 || height <= 0) throw new Error(\"Dimensions must be positive\");\n        this.width = width;\n        this.height = height;\n    }\n\n    public calculateArea(): number {\n        return this.width * this.height;\n    }\n\n    public calculatePerimeter(): number {\n        return 2 * (this.width + this.height);\n    }\n\n    public scale(factor: number): void {\n        if (factor <= 0) throw new Error(\"Scale factor must be positive\");\n        this.width *= factor;\n        this.height *= factor;\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_005",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class TaskManager {\n    private tasks: Array<{ id: string; description: string; completed: boolean }> = [];\n\n    public addTask(id: string, description: string): void {\n        if (this.tasks.some(task => task.id === id)) {\n            throw new Error(\"Task ID already exists\");\n        }\n        this.tasks.push({ id, description, completed: false });\n    }\n\n    public completeTask(id: string): boolean {\n        const task = this.tasks.find(task => task.id === id);\n        if (!task) return false;\n        task.completed = true;\n        return true;\n    }\n\n    public getPendingTasks(): Array<{ id: string; description: string }> {\n        return this.tasks\n            .filter(task => !task.completed)\n            .map(task => ({ id: task.id, description: task.description }));\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_006",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class Logger {\n    private logs: Array<{ message: string; timestamp: Date }> = [];\n    private readonly maxLogs: number;\n\n    constructor(maxLogs: number = 100) {\n        this.maxLogs = maxLogs;\n    }\n\n    public log(message: string): void {\n        if (this.logs.length >= this.maxLogs) {\n            this.logs.shift();\n        }\n        this.logs.push({ message, timestamp: new Date() });\n    }\n\n    public getRecentLogs(count: number = 5): Array<{ message: string; timestamp: Date }> {\n        return this.logs.slice(-count);\n    }\n\n    public clearLogs(): void {\n        this.logs = [];\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_007",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class InventoryItem {\n    private id: string;\n    private name: string;\n    private stock: number;\n    private readonly minStockLevel: number;\n\n    constructor(id: string, name: string, initialStock: number, minStockLevel: number = 0) {\n        this.id = id;\n        this.name = name;\n        this.stock = initialStock;\n        this.minStockLevel = minStockLevel;\n    }\n\n    public updateStock(quantity: number): void {\n        this.stock += quantity;\n        if (this.stock < 0) this.stock = 0;\n    }\n\n    public isLowStock(): boolean {\n        return this.stock <= this.minStockLevel;\n    }\n\n    public getInventoryStatus(): { id: string; name: string; stock: number; isLow: boolean } {\n        return {\n            id: this.id,\n            name: this.name,\n            stock: this.stock,\n            isLow: this.isLowStock()\n        };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_008",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class PasswordValidator {\n    private readonly minLength: number;\n    private readonly requireSpecialChars: boolean;\n\n    constructor(minLength: number = 8, requireSpecialChars: boolean = true) {\n        this.minLength = minLength;\n        this.requireSpecialChars = requireSpecialChars;\n    }\n\n    public validate(password: string): { isValid: boolean; errors?: string[] } {\n        const errors: string[] = [];\n\n        if (password.length < this.minLength) {\n            errors.push(`Password must be at least ${this.minLength} characters long`);\n        }\n\n        if (this.requireSpecialChars && !/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {\n            errors.push(\"Password must contain at least one special character\");\n        }\n\n        return { isValid: errors.length === 0, errors };\n    }\n\n    public getRequirements(): { minLength: number; requireSpecialChars: boolean } {\n        return { minLength: this.minLength, requireSpecialChars: this.requireSpecialChars };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_classes_009",
+    "category": "classes",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "class AudioPlayer {\n    private currentTrack: string | null = null;\n    private volume: number;\n    private readonly maxVolume: number;\n\n    constructor(initialVolume: number = 50, maxVolume: number = 100) {\n        this.volume = Math.min(initialVolume, maxVolume);\n        this.maxVolume = maxVolume;\n    }\n\n    public play(track: string): void {\n        this.currentTrack = track;\n        console.log(`Now playing: ${track} at volume ${this.volume}`);\n    }\n\n    public setVolume(newVolume: number): void {\n        this.volume = Math.max(0, Math.min(newVolume, this.maxVolume));\n    }\n\n    public getCurrentStatus(): { track: string | null; volume: number; isPlaying: boolean } {\n        return {\n            track: this.currentTrack,\n            volume: this.volume,\n            isPlaying: this.currentTrack !== null\n        };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_000",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const composeFunctions = <T, U, V>(\n  fn1: (x: T) => U,\n  fn2: (x: U) => V\n): ((x: T) => V) => {\n  return (input: T): V => fn2(fn1(input));\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_001",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const filterAndMap = <T, U>(\n  items: T[],\n  filterFn: (item: T) => boolean,\n  mapFn: (item: T) => U\n): U[] => {\n  return items.filter(filterFn).map(mapFn);\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_002",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const retryOperation = <T>(\n  operation: (attempt: number) => T,\n  maxAttempts: number,\n  delayMs: number\n): Promise<T> => {\n  return new Promise<T>((resolve, reject) => {\n    const attempt = (currentAttempt: number): void => {\n      try {\n        const result: T = operation(currentAttempt);\n        resolve(result);\n      } catch (error) {\n        if (currentAttempt >= maxAttempts) {\n          reject(error);\n        } else {\n          setTimeout(() => attempt(currentAttempt + 1), delayMs);\n        }\n      }\n    };\n    attempt(1);\n  });\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_003",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const createMemoizer = <T, U>(fn: (arg: T) => U): ((arg: T) => U) => {\n  const cache: Record<string, U> = {};\n  return (arg: T): U => {\n    const key: string = JSON.stringify(arg);\n    if (!(key in cache)) {\n      cache[key] = fn(arg);\n    }\n    return cache[key];\n  };\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_004",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const tap = <T>(value: T, fn: (val: T) => void): T => {\n  fn(value);\n  return value;\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_005",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const converge = <T, U, V>(\n  fn1: (x: T) => U,\n  fn2: (x: T) => V,\n  combiner: (u: U, v: V) => [U, V]\n): ((x: T) => [U, V]) => {\n  return (input: T): [U, V] => combiner(fn1(input), fn2(input));\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_006",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const withLogging = <T, U>(\n  description: string,\n  fn: (arg: T) => U\n): ((arg: T) => U) => {\n  return (arg: T): U => {\n    console.log(`Starting ${description} with input:`, arg);\n    const result: U = fn(arg);\n    console.log(`${description} completed with result:`, result);\n    return result;\n  };\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_007",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const createPipeline = <T>(...fns: Array<(input: T) => T>): ((input: T) => T) => {\n  return (initialInput: T): T => {\n    return fns.reduce((current: T, fn: (input: T) => T): T => {\n      return fn(current);\n    }, initialInput);\n  };\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_008",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const partitionBy = <T, K extends keyof any>(\n  items: T[],\n  keyFn: (item: T) => K\n): Record<K, T[]> => {\n  return items.reduce((acc: Record<K, T[]>, item: T): Record<K, T[]> => {\n    const key: K = keyFn(item);\n    if (!acc[key]) {\n      acc[key] = [];\n    }\n    acc[key].push(item);\n    return acc;\n  }, {} as Record<K, T[]>);\n};"
+  },
+  {
+    "pair_id": "ts_higher_order_functions_009",
+    "category": "higher_order_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "const createDebouncer = <T, U>(\n  fn: (arg: T) => U,\n  delayMs: number\n): ((arg: T) => void) => {\n  let timeoutId: ReturnType<typeof setTimeout> | null = null;\n  return (arg: T): void => {\n    if (timeoutId !== null) {\n      clearTimeout(timeoutId);\n    }\n    timeoutId = setTimeout((): void => {\n      fn(arg);\n      timeoutId = null;\n    }, delayMs);\n  };\n};"
+  },
+  {
+    "pair_id": "ts_error_handling_000",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function parseJsonSafely<T>(input: string): { success: true; data: T } | { success: false; error: SyntaxError } {\n    try {\n        const parsed: T = JSON.parse(input);\n        return { success: true, data: parsed };\n    } catch (error) {\n        return { success: false, error: error instanceof SyntaxError ? error : new SyntaxError(\"Unknown JSON parsing error\") };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_001",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function divideNumbers(numerator: number, denominator: number): number | RangeError {\n    if (denominator === 0) {\n        return new RangeError(\"Denominator cannot be zero\");\n    }\n    if (numerator < Number.MIN_SAFE_INTEGER || denominator < Number.MIN_SAFE_INTEGER ||\n        numerator > Number.MAX_SAFE_INTEGER || denominator > Number.MAX_SAFE_INTEGER) {\n        return new RangeError(\"Numbers out of safe integer range\");\n    }\n    return numerator / denominator;\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_002",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "type FetchResult<T> = { kind: \"success\"; data: T } | { kind: \"error\"; error: Error; status?: number };\n\nasync function fetchWithTimeout<T>(url: string, timeoutMs: number = 5000): Promise<FetchResult<T>> {\n    const controller: AbortController = new AbortController();\n    const timeoutId: NodeJS.Timeout = setTimeout(() => controller.abort(), timeoutMs);\n\n    try {\n        const response: Response = await fetch(url, { signal: controller.signal });\n        clearTimeout(timeoutId);\n        if (!response.ok) return { kind: \"error\", error: new Error(`HTTP ${response.status}`), status: response.status };\n        const data: T = await response.json();\n        return { kind: \"success\", data };\n    } catch (error) {\n        clearTimeout(timeoutId);\n        return { kind: \"error\", error: error instanceof Error ? error : new Error(\"Unknown fetch error\") };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_003",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function validateEmail(email: string): { valid: true; normalized: string } | { valid: false; reason: \"empty\" | \"invalid\" } {\n    if (email.trim().length === 0) return { valid: false, reason: \"empty\" };\n    const normalized: string = email.trim().toLowerCase();\n    const emailRegex: RegExp = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n    return emailRegex.test(normalized)\n        ? { valid: true, normalized }\n        : { valid: false, reason: \"invalid\" };\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_004",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "type FileReadResult = { content: string } | { error: Error; code: \"not_found\" | \"permission\" | \"unknown\" };\n\nfunction readFileSafely(path: string): FileReadResult {\n    const fs = require('fs');\n    try {\n        if (!fs.existsSync(path)) return { error: new Error(\"File not found\"), code: \"not_found\" };\n        const content: string = fs.readFileSync(path, 'utf-8');\n        return { content };\n    } catch (error) {\n        if (error instanceof Error && 'code' in error) {\n            return { error, code: error.code === 'EACCES' ? \"permission\" : \"unknown\" };\n        }\n        return { error: new Error(\"Unknown file read error\"), code: \"unknown\" };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_005",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function findUserById(users: Array<{ id: string; name: string }>, id: string):\n    { found: true; user: { id: string; name: string } } | { found: false; error: \"not_found\" | \"invalid_id\" } {\n    if (id.length < 3) return { found: false, error: \"invalid_id\" };\n    const user = users.find(u => u.id === id);\n    return user\n        ? { found: true, user }\n        : { found: false, error: \"not_found\" };\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_006",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "type DatabaseInsertResult = { success: true; id: string } | { success: false; error: \"duplicate\" | \"validation\" | \"db_error\" };\n\nasync function insertUser(db: { query: (sql: string, values: any[]) => Promise<any> },\n                         user: { email: string; name: string }): Promise<DatabaseInsertResult> {\n    if (!user.email.includes('@')) return { success: false, error: \"validation\" };\n\n    try {\n        const result = await db.query(\n            \"INSERT INTO users (email, name) VALUES (?, ?) ON CONFLICT (email) DO NOTHING RETURNING id\",\n            [user.email, user.name]\n        );\n        if (result.rowCount === 0) return { success: false, error: \"duplicate\" };\n        return { success: true, id: result.rows[0].id };\n    } catch (error) {\n        return { success: false, error: \"db_error\" };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_007",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function calculateDiscount(price: number, discountPercent: number):\n    { finalPrice: number; discountApplied: number } | { error: \"invalid_price\" | \"invalid_discount\" } {\n    if (price <= 0) return { error: \"invalid_price\" };\n    if (discountPercent < 0 || discountPercent > 100) return { error: \"invalid_discount\" };\n\n    const discountAmount: number = price * (discountPercent / 100);\n    const finalPrice: number = parseFloat((price - discountAmount).toFixed(2));\n    return { finalPrice, discountApplied: discountAmount };\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_008",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "type ConfigLoadResult = { config: Record<string, unknown> } | { error: \"file_error\" | \"parse_error\"; details: string };\n\nfunction loadConfig(filePath: string): ConfigLoadResult {\n    try {\n        const raw: string = require('fs').readFileSync(filePath, 'utf8');\n        const parsed: unknown = JSON.parse(raw);\n\n        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {\n            return { error: \"parse_error\", details: \"Config must be a JSON object\" };\n        }\n        return { config: parsed as Record<string, unknown> };\n    } catch (error) {\n        return error instanceof Error\n            ? { error: error.name.includes(\"JSON\") ? \"parse_error\" : \"file_error\", details: error.message }\n            : { error: \"file_error\", details: \"Unknown error occurred\" };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_error_handling_009",
+    "category": "error_handling",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function processPayment(amount: number, card: { number: string; expiry: string; cvv: string }):\n    { status: \"success\"; transactionId: string } |\n    { status: \"failed\"; reason: \"invalid_card\" | \"insufficient_funds\" | \"processing_error\" } {\n    if (!/^\\d{16}$/.test(card.number.replace(/\\s/g, '')) ||\n        !/^\\d{2}\\/\\d{2}$/.test(card.expiry) ||\n        !/^\\d{3,4}$/.test(card.cvv)) {\n        return { status: \"failed\", reason: \"invalid_card\" };\n    }\n\n    if (amount <= 0) return { status: \"failed\", reason: \"processing_error\" };\n    if (amount > 10000) return { status: \"failed\", reason: \"insufficient_funds\" };\n\n    const transactionId: string = `txn_${Math.random().toString(36).substring(2, 10)}`;\n    return Math.random() > 0.1\n        ? { status: \"success\", transactionId }\n        : { status: \"failed\", reason: \"processing_error\" };\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_000",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function findCommonElements<T>(setA: Set<T>, setB: Set<T>): Set<T> {\n    const commonElements: Set<T> = new Set<T>();\n    for (const element of setA) {\n        if (setB.has(element)) {\n            commonElements.add(element);\n        }\n    }\n    return commonElements;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_001",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function countWordFrequencies(text: string): Map<string, number> {\n    const words: string[] = text.toLowerCase().split(/\\s+/);\n    const frequencyMap: Map<string, number> = new Map<string, number>();\n    for (const word of words) {\n        const count: number = (frequencyMap.get(word) ?? 0) + 1;\n        frequencyMap.set(word, count);\n    }\n    return frequencyMap;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_002",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function mergeTypedArrays<T>(array1: T[], array2: T[], comparator: (a: T, b: T) => number): T[] {\n    const merged: T[] = [...array1, ...array2];\n    merged.sort(comparator);\n    return merged;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_003",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function getUniqueValues<T>(array: T[]): Set<T> {\n    const uniqueValues: Set<T> = new Set<T>();\n    for (const value of array) {\n        uniqueValues.add(value);\n    }\n    return uniqueValues;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_004",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function groupByKey<T, K extends keyof T>(items: T[], key: K): Map<T[K], T[]> {\n    const grouped: Map<T[K], T[]> = new Map<T[K], T[]>();\n    for (const item of items) {\n        const keyValue: T[K] = item[key];\n        const group: T[] = grouped.get(keyValue) ?? [];\n        group.push(item);\n        grouped.set(keyValue, group);\n    }\n    return grouped;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_005",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function findTopKFrequent<T>(items: T[], k: number): [T, number][] {\n    const frequencyMap: Map<T, number> = new Map<T, number>();\n    for (const item of items) {\n        frequencyMap.set(item, (frequencyMap.get(item) ?? 0) + 1);\n    }\n    return Array.from(frequencyMap.entries())\n        .sort((a, b) => b[1] - a[1])\n        .slice(0, k);\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_006",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function symmetricDifference<T>(setA: Set<T>, setB: Set<T>): Set<T> {\n    const difference: Set<T> = new Set<T>();\n    for (const element of setA) {\n        if (!setB.has(element)) difference.add(element);\n    }\n    for (const element of setB) {\n        if (!setA.has(element)) difference.add(element);\n    }\n    return difference;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_007",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function invertMap<K, V>(map: Map<K, V[]>): Map<V, K[]> {\n    const inverted: Map<V, K[]> = new Map<V, K[]>();\n    for (const [key, values] of map) {\n        for (const value of values) {\n            const keys: K[] = inverted.get(value) ?? [];\n            keys.push(key);\n            inverted.set(value, keys);\n        }\n    }\n    return inverted;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_008",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function computeRunningAverages(numbers: number[]): number[] {\n    const runningAverages: number[] = [];\n    let sum: number = 0;\n    for (let i: number = 0; i < numbers.length; i++) {\n        sum += numbers[i];\n        runningAverages.push(sum / (i + 1));\n    }\n    return runningAverages;\n}"
+  },
+  {
+    "pair_id": "ts_algorithms_009",
+    "category": "algorithms",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function findPairsWithSum(numbers: number[], target: number): Set<string> {\n    const seen: Set<number> = new Set<number>();\n    const pairs: Set<string> = new Set<string>();\n    for (const num of numbers) {\n        const complement: number = target - num;\n        if (seen.has(complement)) {\n            pairs.add(`[${Math.min(num, complement)},${Math.max(num, complement)}]`);\n        }\n        seen.add(num);\n    }\n    return pairs;\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_000",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function deepMerge<T extends Record<string, any>, U extends Record<string, any>>(target: T, source: U): T & U {\n    const output: Partial<T & U> = { ...target };\n    for (const key in source) {\n        if (source[key] instanceof Object && key in target) {\n            output[key] = deepMerge(target[key], source[key]);\n        } else {\n            output[key] = source[key];\n        }\n    }\n    return output as T & U;\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_001",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function debounce<T extends (...args: any[]) => any>(\n    func: T,\n    wait: number,\n    immediate: boolean = false\n): (...args: Parameters<T>) => void {\n    let timeout: ReturnType<typeof setTimeout> | null = null;\n    return function(this: any, ...args: Parameters<T>): void {\n        const context = this;\n        const later = () => {\n            timeout = null;\n            if (!immediate) func.apply(context, args);\n        };\n        const callNow = immediate && !timeout;\n        if (timeout) clearTimeout(timeout);\n        timeout = setTimeout(later, wait);\n        if (callNow) func.apply(context, args);\n    };\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_002",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function partitionArray<T, K extends keyof T>(\n    array: T[],\n    predicate: (item: T) => boolean\n): [T[], T[]] {\n    const truthy: T[] = [];\n    const falsy: T[] = [];\n    for (const item of array) {\n        if (predicate(item)) {\n            truthy.push(item);\n        } else {\n            falsy.push(item);\n        }\n    }\n    return [truthy, falsy];\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_003",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function memoize<T extends (...args: any[]) => any>(\n    fn: T,\n    keyResolver?: (...args: Parameters<T>) => string\n): (...args: Parameters<T>) => ReturnType<T> {\n    const cache = new Map<string, ReturnType<T>>();\n    return (...args: Parameters<T>): ReturnType<T> => {\n        const key: string = keyResolver ? keyResolver(...args) : JSON.stringify(args);\n        if (cache.has(key)) return cache.get(key)!;\n        const result = fn(...args);\n        cache.set(key, result);\n        return result;\n    };\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_004",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function pluck<T, K extends keyof T>(\n    items: T[],\n    key: K\n): Array<T[K]> {\n    return items.map(item => item[key]);\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_005",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function curry<N extends any[], R>(\n    fn: (...args: N) => R,\n    ...args1: Partial<N>\n): N extends [...infer A, ...infer B]\n    ? A extends N ? R : (...args2: B) => R\n    : never {\n    return (...args2: any[]) => {\n        const combinedArgs = [...args1, ...args2];\n        return combinedArgs.length >= fn.length\n            ? fn(...combinedArgs as N)\n            : curry(fn, ...combinedArgs);\n    } as any;\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_006",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function groupBy<T, K extends keyof any>(\n    array: T[],\n    keySelector: (item: T) => K\n): Record<K, T[]> {\n    return array.reduce<Record<K, T[]>>((acc, item) => {\n        const key: K = keySelector(item);\n        if (!acc[key]) acc[key] = [];\n        acc[key].push(item);\n        return acc;\n    }, {} as Record<K, T[]>);\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_007",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function tryCatch<T extends (...args: any[]) => any>(\n    fn: T,\n    fallback: ReturnType<T> | ((error: unknown) => ReturnType<T>)\n): (...args: Parameters<T>) => ReturnType<T> {\n    return (...args: Parameters<T>): ReturnType<T> => {\n        try {\n            return fn(...args);\n        } catch (error) {\n            return typeof fallback === 'function'\n                ? (fallback as Function)(error)\n                : fallback;\n        }\n    };\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_008",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function zipObject<K extends string | number | symbol, V>(\n    keys: K[],\n    values: V[]\n): Record<K, V> {\n    if (keys.length !== values.length) {\n        throw new Error(\"Keys and values arrays must be of equal length\");\n    }\n    return keys.reduce<Record<K, V>>((obj, key, index) => {\n        obj[key] = values[index];\n        return obj;\n    }, {} as Record<K, V>);\n}"
+  },
+  {
+    "pair_id": "ts_utility_functions_009",
+    "category": "utility_functions",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "function chainAsync<T, R>(\n    initialValue: T,\n    ...fns: Array<(input: Awaited<T>) => Promise<R> | R>\n): Promise<Awaited<R>> {\n    return fns.reduce(async (promise, fn) => {\n        const result = await promise;\n        return fn(result);\n    }, Promise.resolve(initialValue));\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_000",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "async function fetchUserData(userId: string): Promise<{ id: string; name: string; email: string }> {\n    const response: Response = await fetch(`https://api.example.com/users/${userId}`);\n    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);\n    const data: { id: string; name: string; email: string } = await response.json();\n    return data;\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_001",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface Product {\n    id: number;\n    title: string;\n    price: number;\n    category: string;\n}\n\nasync function getProductsByCategory(category: string, limit: number = 10): Promise<Product[]> {\n    const queryParams: URLSearchParams = new URLSearchParams({ category, limit: limit.toString() });\n    const response: Response = await fetch(`https://api.example.com/products?${queryParams}`);\n    const products: Product[] = await response.json();\n    return products.filter((p: Product): boolean => p.category === category);\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_002",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "type ApiResponse<T> = { success: boolean; data?: T; error?: string };\n\nasync function safeFetch<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {\n    try {\n        const response: Response = await fetch(url, options);\n        if (!response.ok) return { success: false, error: `HTTP ${response.status}` };\n        const data: T = await response.json();\n        return { success: true, data };\n    } catch (error: unknown) {\n        return { success: false, error: error instanceof Error ? error.message : \"Unknown error\" };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_003",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface WeatherData {\n    temperature: number;\n    humidity: number;\n    conditions: string;\n    timestamp: Date;\n}\n\nasync function fetchWeatherWithRetry(location: string, retries: number = 3): Promise<WeatherData> {\n    for (let attempt: number = 1; attempt <= retries; attempt++) {\n        try {\n            const response: Response = await fetch(`https://api.weather.com/${location}`);\n            return await response.json() as WeatherData;\n        } catch (error) {\n            if (attempt === retries) throw error;\n            await new Promise((resolve: (value: void) => void): void => setTimeout(resolve, 1000 * attempt));\n        }\n    }\n    throw new Error(\"Max retries exceeded\");\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_004",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface PaginatedResponse<T> {\n    items: T[];\n    total: number;\n    page: number;\n    pageSize: number;\n}\n\nasync function fetchPaginatedData<T>(\n    endpoint: string,\n    page: number = 1,\n    pageSize: number = 20\n): Promise<PaginatedResponse<T>> {\n    const url: string = `${endpoint}?page=${page}&pageSize=${pageSize}`;\n    const response: Response = await fetch(url);\n    const { items, total }: { items: T[]; total: number } = await response.json();\n    return { items, total, page, pageSize };\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_005",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "type HttpMethod = \"GET\" | \"POST\" | \"PUT\" | \"DELETE\";\n\nasync function typedRequest<T, U>(\n    url: string,\n    method: HttpMethod,\n    body?: U,\n    headers?: Record<string, string>\n): Promise<T> {\n    const options: RequestInit = {\n        method,\n        headers: { \"Content-Type\": \"application/json\", ...headers },\n        body: body ? JSON.stringify(body) : undefined,\n    };\n    const response: Response = await fetch(url, options);\n    return await response.json() as T;\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_006",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface UserPost {\n    userId: number;\n    id: number;\n    title: string;\n    body: string;\n}\n\nasync function fetchUserPostsWithTimeout(\n    userId: number,\n    timeoutMs: number = 5000\n): Promise<UserPost[]> {\n    const controller: AbortController = new AbortController();\n    const timeoutId: NodeJS.Timeout = setTimeout((): void => controller.abort(), timeoutMs);\n\n    try {\n        const response: Response = await fetch(`https://jsonplaceholder.typicode.com/posts?userId=${userId}`, {\n            signal: controller.signal,\n        });\n        return await response.json() as UserPost[];\n    } finally {\n        clearTimeout(timeoutId);\n    }\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_007",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface ApiError {\n    code: number;\n    message: string;\n    details?: Record<string, string>;\n}\n\nasync function validateAndProcessData<T, U>(\n    data: T,\n    validator: (input: T) => boolean,\n    processor: (input: T) => Promise<U>\n): Promise<U | ApiError> {\n    if (!validator(data)) {\n        return { code: 400, message: \"Invalid data format\" };\n    }\n    try {\n        return await processor(data);\n    } catch (error: unknown) {\n        return {\n            code: 500,\n            message: \"Processing failed\",\n            details: error instanceof Error ? { error: error.message } : undefined,\n        };\n    }\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_008",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface StockPrice {\n    symbol: string;\n    price: number;\n    change: number;\n    lastUpdated: string;\n}\n\nasync function getMultipleStockPrices(symbols: string[]): Promise<Record<string, StockPrice>> {\n    const requests: Promise<Response>[] = symbols.map(\n        (symbol: string): Promise<Response> => fetch(`https://api.stocks.com/price/${symbol}`)\n    );\n    const responses: Response[] = await Promise.all(requests);\n    const prices: StockPrice[] = await Promise.all(\n        responses.map((res: Response): Promise<StockPrice> => res.json())\n    );\n\n    return prices.reduce(\n        (acc: Record<string, StockPrice>, price: StockPrice): Record<string, StockPrice> => {\n            acc[price.symbol] = price;\n            return acc;\n        },\n        {}\n    );\n}"
+  },
+  {
+    "pair_id": "ts_api_data_processing_009",
+    "category": "api_data_processing",
+    "language": "typescript",
+    "language_family": "ts_js",
+    "typing": "typed",
+    "code": "interface CacheEntry<T> {\n    value: T;\n    timestamp: number;\n    ttl: number;\n}\n\nconst apiCache: Map<string, CacheEntry<unknown>> = new Map();\n\nasync function fetchWithCache<T>(\n    key: string,\n    fetchFn: () => Promise<T>,\n    ttlMs: number = 300000\n): Promise<T> {\n    const cached: CacheEntry<T> | undefined = apiCache.get(key) as CacheEntry<T> | undefined;\n    if (cached && Date.now() - cached.timestamp < cached.ttl) {\n        return cached.value;\n    }\n\n    const freshData: T = await fetchFn();\n    apiCache.set(key, { value: freshData, timestamp: Date.now(), ttl: ttlMs });\n    return freshData;\n}"
+  },
+  {
+    "pair_id": "py_simple_functions_000",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def calculate_discounted_price(original_price: float, discount_percentage: float) -> float:\n    if discount_percentage < 0.0 or discount_percentage > 100.0:\n        raise ValueError(\"Discount percentage must be between 0 and 100\")\n    discount_factor: float = 1.0 - (discount_percentage / 100.0)\n    discounted_price: float = original_price * discount_factor\n    return round(discounted_price, 2)"
+  },
+  {
+    "pair_id": "py_simple_functions_001",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def is_palindrome(text: str) -> bool:\n    cleaned_text: str = text.lower().replace(\" \", \"\")\n    reversed_text: str = cleaned_text[::-1]\n    return cleaned_text == reversed_text"
+  },
+  {
+    "pair_id": "py_simple_functions_002",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def convert_fahrenheit_to_celsius(fahrenheit: float) -> float:\n    celsius: float = (fahrenheit - 32.0) * 5.0 / 9.0\n    return round(celsius, 2)"
+  },
+  {
+    "pair_id": "py_simple_functions_003",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def calculate_bmi(weight_kg: float, height_m: float) -> float:\n    if height_m <= 0.0:\n        raise ValueError(\"Height must be positive\")\n    bmi: float = weight_kg / (height_m ** 2)\n    return round(bmi, 1)"
+  },
+  {
+    "pair_id": "py_simple_functions_004",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def count_vowels(input_string: str) -> int:\n    vowels: str = \"aeiouAEIOU\"\n    count: int = 0\n    for char in input_string:\n        if char in vowels:\n            count += 1\n    return count"
+  },
+  {
+    "pair_id": "py_simple_functions_005",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def is_prime(number: int) -> bool:\n    if number <= 1:\n        return False\n    for divisor in range(2, int(number ** 0.5) + 1):\n        if number % divisor == 0:\n            return False\n    return True"
+  },
+  {
+    "pair_id": "py_simple_functions_006",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def calculate_compound_interest(\n    principal: float,\n    annual_rate: float,\n    years: int,\n    compounding_periods: int\n) -> float:\n    rate_per_period: float = annual_rate / compounding_periods\n    total_periods: int = years * compounding_periods\n    amount: float = principal * (1 + rate_per_period / 100) ** total_periods\n    return round(amount, 2)"
+  },
+  {
+    "pair_id": "py_simple_functions_007",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def format_phone_number(digits: str) -> str:\n    if len(digits) != 10 or not digits.isdigit():\n        raise ValueError(\"Input must be 10 digits\")\n    area_code: str = digits[:3]\n    exchange: str = digits[3:6]\n    line_number: str = digits[6:]\n    return f\"({area_code}) {exchange}-{line_number}\""
+  },
+  {
+    "pair_id": "py_simple_functions_008",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def calculate_grade_score(score: int, max_score: int) -> str:\n    if max_score <= 0:\n        raise ValueError(\"Max score must be positive\")\n    percentage: float = (score / max_score) * 100\n    if percentage >= 90.0:\n        return \"A\"\n    elif percentage >= 80.0:\n        return \"B\"\n    elif percentage >= 70.0:\n        return \"C\"\n    elif percentage >= 60.0:\n        return \"D\"\n    else:\n        return \"F\""
+  },
+  {
+    "pair_id": "py_simple_functions_009",
+    "category": "simple_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def generate_password_length_check(password: str) -> bool:\n    min_length: int = 8\n    max_length: int = 64\n    length: int = len(password)\n    has_upper: bool = any(c.isupper() for c in password)\n    has_lower: bool = any(c.islower() for c in password)\n    has_digit: bool = any(c.isdigit() for c in password)\n    return (min_length <= length <= max_length and\n            has_upper and has_lower and has_digit)"
+  },
+  {
+    "pair_id": "py_data_structures_000",
+    "category": "data_structures",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from dataclasses import dataclass\nfrom typing import List, Dict, Optional\n\n@dataclass(frozen=True)\nclass Point3D:\n    x: float\n    y: float\n    z: float\n\n    def distance_to(self, other: \"Point3D\") -> float:\n        return ((self.x - other.x)**2 + (self.y - other.y)**2 + (self.z - other.z)**2)**0.5"
+  },
+  {
+    "pair_id": "py_data_structures_001",
+    "category": "data_structures",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from dataclasses import dataclass\nfrom typing import List, Tuple\n\n@dataclass\nclass Rectangle:\n    width: float\n    height: float\n    position: Tuple[float, float] = (0.0, 0.0)\n\n    def area(self) -> float:\n        return self.width * self.height\n\n    def scale(self, factor: float) -> \"Rectangle\":\n        return Rectangle(self.width * factor, self.height * factor, self.position)"
+  },
+  {
+    "pair_id": "py_data_structures_002",
+    "category": "data_structures",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from dataclasses import dataclass\nfrom typing import List, Optional, TypeVar, Generic\n\nT = TypeVar('T')\n\n@dataclass\nclass Stack(Generic[T]):\n    items: List[T] = None\n\n    def __post_init__(self) -> None:\n        if self.items is None:\n            self.items = []\n\n    def push(self, item: T) -> None:\n        self.items.append(item)\n\n    def pop(self) -> Optional[T]:\n        return self.items.pop() if self.items else None"
+  },
+  {
+    "pair_id": "py_data_structures_003",
+    "category": "data_structures",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from dataclasses import dataclass\nfrom typing import Dict, List, Optional, Union\n\n@dataclass\nclass APIResponse:\n    status: int\n    data: Union[Dict[str, object], List[object], None]\n    message: Optional[str] = None\n    error: Optional[str] = None\n\n    def is_success(self) -> bool:\n        return 200 <= self.status < 300"
+  },
+  {
+    "pair_id": "py_data_structures_004",
+    "category": "data_structures",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from dataclasses import dataclass\nfrom typing import Dict, List, Optional\nfrom decimal import Decimal\n\n@dataclass\nclass Product:\n    name: str\n    price: Decimal\n    sku: str\n    stock: int = 0\n    categories: List[str] = None\n\n    def apply_discount(self, percentage: Decimal) -> \"Product\":\n        if not 0 <= percentage <= 100:\n            raise ValueError(\"Percentage must be between 0 and 100\")\n        discount = self.price * (percentage / 100)\n        return Product(self.name, self.price - discount, self.sku, self.stock, self.categories)"
+  },
+  {
+    "pair_id": "py_generics_000",
+    "category": "generics",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypeVar, Generic, List, Dict, Optional, Callable, Any, Tuple\n\nT = TypeVar('T')\nK = TypeVar('K')\nV = TypeVar('V')\n\ndef identity_function(value: T) -> T:\n    \"\"\"Returns the input value unchanged.\"\"\"\n    return value"
+  },
+  {
+    "pair_id": "py_generics_001",
+    "category": "generics",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypeVar, Generic, Dict, List\n\nK = TypeVar('K')\nV = TypeVar('V')\n\ndef invert_dictionary(dictionary: Dict[K, V]) -> Dict[V, List[K]]:\n    \"\"\"Inverts a dictionary, collecting keys in lists for duplicate values.\"\"\"\n    inverted: Dict[V, List[K]] = {}\n    for key, value in dictionary.items():\n        inverted.setdefault(value, []).append(key)\n    return inverted"
+  },
+  {
+    "pair_id": "py_generics_002",
+    "category": "generics",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypeVar, Generic, Type, Any\n\nT = TypeVar('T')\n\nclass Singleton(Generic[T]):\n    \"\"\"Generic singleton class that holds a single instance of type T.\"\"\"\n    _instance: Optional[T] = None\n\n    def __init__(self, instance: T) -> None:\n        if Singleton._instance is None:\n            Singleton._instance = instance\n\n    @classmethod\n    def get_instance(cls) -> Optional[T]:\n        return cls._instance"
+  },
+  {
+    "pair_id": "py_generics_003",
+    "category": "generics",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypeVar, Generic, Dict, Type\n\nT = TypeVar('T', bound=Dict[str, Any])\n\ndef merge_dicts(dict1: T, dict2: T) -> T:\n    \"\"\"Merges two dictionaries of the same type, preferring dict2's values.\"\"\"\n    merged = dict1.copy()\n    merged.update(dict2)\n    return merged  # type: ignore"
+  },
+  {
+    "pair_id": "py_generics_004",
+    "category": "generics",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypeVar, Generic, Type, Any, Optional\n\nT = TypeVar('T')\n\ndef find_by_type(items: List[Any], target_type: Type[T]) -> Optional[T]:\n    \"\"\"Finds the first item in a list that matches the specified type.\"\"\"\n    for item in items:\n        if isinstance(item, target_type):\n            return item\n    return None"
+  },
+  {
+    "pair_id": "py_union_types_000",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, List, Dict, Any\n\ndef process_data(input_data: Union[str, List[int]]) -> Optional[str]:\n    if isinstance(input_data, str):\n        return input_data.upper() if len(input_data) > 0 else None\n    elif isinstance(input_data, list):\n        return str(sum(input_data)) if input_data else None\n    return None"
+  },
+  {
+    "pair_id": "py_union_types_001",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, Tuple\n\ndef find_average(numbers: Optional[Union[List[float], Tuple[float, ...]]]) -> float:\n    if numbers is None:\n        raise ValueError(\"Input cannot be None\")\n    if not numbers:\n        return 0.0\n    return sum(numbers) / len(numbers)"
+  },
+  {
+    "pair_id": "py_union_types_002",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, Dict\n\ndef get_user_info(user_id: int, cache: Optional[Dict[int, str]] = None) -> Union[str, None]:\n    if cache is not None:\n        return cache.get(user_id)\n    return f\"User-{user_id}\" if user_id > 0 else None"
+  },
+  {
+    "pair_id": "py_union_types_003",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, Set\n\ndef validate_input(value: Union[int, str, None]) -> Optional[bool]:\n    if value is None:\n        return None\n    if isinstance(value, int):\n        return value >= 0\n    if isinstance(value, str):\n        return len(value.strip()) > 0\n    return False"
+  },
+  {
+    "pair_id": "py_union_types_004",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, Callable\n\ndef apply_operation(\n    x: float,\n    y: float,\n    operation: Optional[Callable[[float, float], Union[float, int]]] = None\n) -> Union[float, int, None]:\n    if operation is None:\n        return None\n    return operation(x, y)"
+  },
+  {
+    "pair_id": "py_union_types_005",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, List, TypeVar\n\nT = TypeVar('T', int, str)\n\ndef find_first_matching(\n    items: List[T],\n    condition: Optional[Union[Callable[[T], bool], T]] = None\n) -> Optional[T]:\n    if condition is None:\n        return items[0] if items else None\n    if callable(condition):\n        return next((item for item in items if condition(item)), None)\n    return next((item for item in items if item == condition), None)"
+  },
+  {
+    "pair_id": "py_union_types_006",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, Dict, Any\n\ndef parse_config(\n    config: Union[Dict[str, Any], str, None],\n    default: Optional[Dict[str, Any]] = None\n) -> Dict[str, Any]:\n    if config is None:\n        return default if default is not None else {}\n    if isinstance(config, str):\n        return {\"path\": config}\n    return config"
+  },
+  {
+    "pair_id": "py_union_types_007",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, List, Tuple\n\ndef split_data(\n    data: Union[str, List[int]],\n    delimiter: Optional[str] = None\n) -> Union[List[str], Tuple[int, ...], None]:\n    if isinstance(data, str):\n        return data.split(delimiter) if delimiter is not None else data.split()\n    if isinstance(data, list):\n        return tuple(data)\n    return None"
+  },
+  {
+    "pair_id": "py_union_types_008",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, Any\n\ndef safe_divide(\n    numerator: Union[int, float],\n    denominator: Union[int, float]\n) -> Optional[float]:\n    if denominator == 0:\n        return None\n    return numerator / denominator"
+  },
+  {
+    "pair_id": "py_union_types_009",
+    "category": "union_types",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Optional, List, Type\n\ndef create_instance(\n    cls: Type[Union[str, int, float]],\n    value: Optional[Union[str, int, float]] = None\n) -> Union[str, int, float]:\n    if value is None:\n        return cls()\n    return cls(value)"
+  },
+  {
+    "pair_id": "py_classes_000",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import List, Dict, Optional\n\nclass Book:\n    def __init__(self, title: str, author: str, pages: int, isbn: str) -> None:\n        self.title: str = title\n        self.author: str = author\n        self.pages: int = pages\n        self.isbn: str = isbn\n        self.is_checked_out: bool = False\n\n    def check_out(self) -> bool:\n        if not self.is_checked_out:\n            self.is_checked_out = True\n            return True\n        return False\n\n    def return_book(self) -> None:\n        self.is_checked_out = False"
+  },
+  {
+    "pair_id": "py_classes_001",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Tuple, Optional\n\nclass Point3D:\n    def __init__(self, x: float, y: float, z: float) -> None:\n        self.x: float = x\n        self.y: float = y\n        self.z: float = z\n\n    def distance_to(self, other: 'Point3D') -> float:\n        return ((self.x - other.x)**2 + (self.y - other.y)**2 + (self.z - other.z)**2)**0.5\n\n    def translate(self, dx: float, dy: float, dz: float) -> 'Point3D':\n        return Point3D(self.x + dx, self.y + dy, self.z + dz)"
+  },
+  {
+    "pair_id": "py_classes_002",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Set, Optional\nfrom dataclasses import dataclass\n\n@dataclass\nclass User:\n    username: str\n    email: str\n    user_id: int\n    roles: Set[str] = set()\n\n    def add_role(self, role: str) -> bool:\n        if role in self.roles:\n            return False\n        self.roles.add(role)\n        return True\n\n    def has_role(self, role: str) -> bool:\n        return role in self.roles"
+  },
+  {
+    "pair_id": "py_classes_003",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import List, Optional\nfrom datetime import datetime\n\nclass Task:\n    def __init__(self, description: str, due_date: datetime, priority: int) -> None:\n        self.description: str = description\n        self.due_date: datetime = due_date\n        self.priority: int = priority\n        self.is_completed: bool = False\n\n    def mark_completed(self) -> None:\n        self.is_completed = True\n\n    def days_until_due(self) -> int:\n        return (self.due_date - datetime.now()).days"
+  },
+  {
+    "pair_id": "py_classes_004",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Dict, List, Optional\nfrom enum import Enum\n\nclass LogLevel(Enum):\n    DEBUG = 1\n    INFO = 2\n    WARNING = 3\n    ERROR = 4\n\nclass Logger:\n    def __init__(self, name: str, level: LogLevel = LogLevel.INFO) -> None:\n        self.name: str = name\n        self.level: LogLevel = level\n        self.logs: List[str] = []\n\n    def log(self, message: str, level: LogLevel) -> bool:\n        if level.value >= self.level.value:\n            self.logs.append(f\"[{level.name}] {message}\")\n            return True\n        return False\n\n    def get_logs(self) -> List[str]:\n        return self.logs.copy()"
+  },
+  {
+    "pair_id": "py_classes_005",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Dict, Optional, Union\n\nclass BankAccount:\n    def __init__(self, account_holder: str, balance: float = 0.0) -> None:\n        self.account_holder: str = account_holder\n        self.balance: float = balance\n        self.transaction_history: List[str] = []\n\n    def deposit(self, amount: float) -> bool:\n        if amount <= 0:\n            return False\n        self.balance += amount\n        self.transaction_history.append(f\"Deposit: +{amount}\")\n        return True\n\n    def withdraw(self, amount: float) -> Union[bool, str]:\n        if amount <= 0:\n            return \"Invalid amount\"\n        if amount > self.balance:\n            return \"Insufficient funds\"\n        self.balance -= amount\n        self.transaction_history.append(f\"Withdrawal: -{amount}\")\n        return True"
+  },
+  {
+    "pair_id": "py_classes_006",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import List, Optional, Tuple\n\nclass Rectangle:\n    def __init__(self, width: float, height: float, x: float = 0.0, y: float = 0.0) -> None:\n        self.width: float = width\n        self.height: float = height\n        self.x: float = x\n        self.y: float = y\n\n    def area(self) -> float:\n        return self.width * self.height\n\n    def contains_point(self, point_x: float, point_y: float) -> bool:\n        return (self.x <= point_x <= self.x + self.width and\n                self.y <= point_y <= self.y + self.height)\n\n    def intersection(self, other: 'Rectangle') -> Optional['Rectangle']:\n        overlap_x = max(0, min(self.x + self.width, other.x + other.width) - max(self.x, other.x))\n        overlap_y = max(0, min(self.y + self.height, other.y + other.height) - max(self.y, other.y))\n        if overlap_x > 0 and overlap_y > 0:\n            return Rectangle(overlap_x, overlap_y, max(self.x, other.x), max(self.y, other.y))\n        return None"
+  },
+  {
+    "pair_id": "py_classes_007",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Dict, List, Optional\nfrom abc import ABC, abstractmethod\n\nclass Animal(ABC):\n    def __init__(self, name: str, age: int) -> None:\n        self.name: str = name\n        self.age: int = age\n\n    @abstractmethod\n    def make_sound(self) -> str:\n        pass\n\n    def description(self) -> str:\n        return f\"{self.name} is {self.age} years old\"\n\nclass Dog(Animal):\n    def __init__(self, name: str, age: int, breed: str) -> None:\n        super().__init__(name, age)\n        self.breed: str = breed\n\n    def make_sound(self) -> str:\n        return \"Woof!\""
+  },
+  {
+    "pair_id": "py_classes_008",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Dict, List, Optional, TypeVar, Generic\nfrom uuid import UUID, uuid4\n\nT = TypeVar('T')\n\nclass UniqueIdentifier(Generic[T]):\n    def __init__(self, value: T) -> None:\n        self.id: UUID = uuid4()\n        self.value: T = value\n        self.created_at: float = time.time()\n\n    def get_age_seconds(self) -> float:\n        return time.time() - self.created_at\n\n    def __eq__(self, other: object) -> bool:\n        if not isinstance(other, UniqueIdentifier):\n            return False\n        return self.id == other.id"
+  },
+  {
+    "pair_id": "py_classes_009",
+    "category": "classes",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Dict, List, Optional, Protocol\n\nclass Serializable(Protocol):\n    def serialize(self) -> Dict[str, str]:\n        ...\n\nclass ConfigManager:\n    def __init__(self) -> None:\n        self.configs: Dict[str, Serializable] = {}\n\n    def add_config(self, name: str, config: Serializable) -> bool:\n        if name in self.configs:\n            return False\n        self.configs[name] = config\n        return True\n\n    def get_serialized(self, name: str) -> Optional[Dict[str, str]]:\n        config = self.configs.get(name)\n        return config.serialize() if config else None\n\n    def remove_config(self, name: str) -> bool:\n        if name in self.configs:\n            del self.configs[name]\n            return True\n        return False"
+  },
+  {
+    "pair_id": "py_higher_order_functions_000",
+    "category": "higher_order_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Callable, TypeVar, Any, List, Tuple\nfrom collections.abc import Iterable\n\nT = TypeVar('T')\nU = TypeVar('U')\nV = TypeVar('V')\n\ndef compose_functions(\n    func1: Callable[[T], U],\n    func2: Callable[[U], V]\n) -> Callable[[T], V]:\n    \"\"\"Compose two functions, returning a new function that applies them in sequence.\"\"\"\n    def composed(x: T) -> V:\n        return func2(func1(x))\n    return composed"
+  },
+  {
+    "pair_id": "py_higher_order_functions_001",
+    "category": "higher_order_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Callable, TypeVar, Optional\n\nT = TypeVar('T')\n\ndef retry_on_failure(\n    func: Callable[[], T],\n    max_attempts: int = 3,\n    handle_error: Optional[Callable[[Exception], None]] = None\n) -> T:\n    \"\"\"Retry a function until it succeeds or max attempts are reached.\"\"\"\n    last_exception: Optional[Exception] = None\n    for _ in range(max_attempts):\n        try:\n            return func()\n        except Exception as e:\n            last_exception = e\n            if handle_error:\n                handle_error(e)\n    raise last_exception if last_exception else RuntimeError(\"Unknown error\")"
+  },
+  {
+    "pair_id": "py_higher_order_functions_002",
+    "category": "higher_order_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Callable, TypeVar, Any\n\nT = TypeVar('T')\n\ndef memoize(\n    func: Callable[[T], Any]\n) -> Callable[[T], Any]:\n    \"\"\"Return a memoized version of a function.\"\"\"\n    cache: dict[T, Any] = {}\n\n    def memoized_func(arg: T) -> Any:\n        if arg not in cache:\n            cache[arg] = func(arg)\n        return cache[arg]\n\n    return memoized_func"
+  },
+  {
+    "pair_id": "py_higher_order_functions_003",
+    "category": "higher_order_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Callable, TypeVar, Protocol\n\nT = TypeVar('T', contravariant=True)\nU = TypeVar('U', covariant=True)\n\nclass SupportsLessThan(Protocol):\n    def __lt__(self, other: Any) -> bool: ...\n\nCT = TypeVar('CT', bound=SupportsLessThan)\n\ndef binary_search(\n    func: Callable[[CT], bool],\n    low: CT,\n    high: CT\n) -> CT:\n    \"\"\"Find the smallest value where func returns True using binary search.\"\"\"\n    while low < high:\n        mid = (low + high) // 2\n        if func(mid):\n            high = mid\n        else:\n            low = mid + 1\n    return low"
+  },
+  {
+    "pair_id": "py_higher_order_functions_004",
+    "category": "higher_order_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Callable, TypeVar, Iterable, Tuple\n\nT = TypeVar('T')\nU = TypeVar('U')\n\ndef zip_with(\n    func: Callable[[T, U], V],\n    iter1: Iterable[T],\n    iter2: Iterable[U]\n) -> list[V]:\n    \"\"\"Combine two iterables by applying a function to pairs of elements.\"\"\"\n    return [func(x, y) for x, y in zip(iter1, iter2)]"
+  },
+  {
+    "pair_id": "py_error_handling_000",
+    "category": "error_handling",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Union, Tuple, Optional, TypeVar, Generic\nfrom dataclasses import dataclass\nimport json\n\n@dataclass\nclass Result[T]:\n    success: bool\n    value: Optional[T] = None\n    error: Optional[str] = None\n\nT = TypeVar('T')\n\ndef safe_divide(numerator: float, denominator: float) -> Union[float, str]:\n    try:\n        return numerator / denominator\n    except ZeroDivisionError:\n        return \"Cannot divide by zero\"\n    except TypeError as e:\n        return f\"Type error: {str(e)}\""
+  },
+  {
+    "pair_id": "py_error_handling_001",
+    "category": "error_handling",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "@dataclass\nclass FileReadResult:\n    content: Optional[str] = None\n    error: Optional[str] = None\n\ndef read_file_safely(path: str) -> FileReadResult:\n    result = FileReadResult()\n    try:\n        with open(path, 'r') as f:\n            result.content = f.read()\n    except FileNotFoundError:\n        result.error = f\"File not found: {path}\"\n    except PermissionError:\n        result.error = f\"Permission denied: {path}\"\n    return result"
+  },
+  {
+    "pair_id": "py_error_handling_002",
+    "category": "error_handling",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "class DatabaseConnection:\n    def query(self, sql: str) -> dict: ...\n\ndef execute_query_safe(\n    conn: DatabaseConnection,\n    query: str\n) -> Result[dict]:\n    try:\n        result = conn.query(query)\n        return Result(success=True, value=result)\n    except Exception as e:\n        return Result(success=False, error=str(e))"
+  },
+  {
+    "pair_id": "py_error_handling_003",
+    "category": "error_handling",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Any\n\ndef get_nested_value_safe(\n    data: dict,\n    keys: Tuple[str, ...]\n) -> Union[Any, Tuple[None, str]]:\n    try:\n        current: Any = data\n        for key in keys:\n            current = current[key]\n        return current\n    except (KeyError, TypeError) as e:\n        return (None, f\"Path not found: {str(e)}\")"
+  },
+  {
+    "pair_id": "py_error_handling_004",
+    "category": "error_handling",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Callable\n\ndef execute_with_retry(\n    func: Callable[[], T],\n    max_retries: int = 3\n) -> Result[T]:\n    last_error: Optional[str] = None\n    for attempt in range(max_retries):\n        try:\n            return Result(success=True, value=func())\n        except Exception as e:\n            last_error = str(e)\n    return Result(success=False, error=last_error)"
+  },
+  {
+    "pair_id": "py_algorithms_000",
+    "category": "algorithms",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from collections import defaultdict\nfrom typing import Dict, List, Set, Tuple\n\ndef find_anagrams(words: List[str]) -> Dict[str, List[str]]:\n    groups: Dict[str, List[str]] = defaultdict(list)\n    for word in words:\n        key: str = \"\".join(sorted(word.lower()))\n        groups[key].append(word)\n    return dict(groups)"
+  },
+  {
+    "pair_id": "py_algorithms_001",
+    "category": "algorithms",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def count_word_frequencies(text: str, stopwords: Set[str]) -> Dict[str, int]:\n    words: List[str] = [\n        word.strip(\".,!?\").lower()\n        for word in text.split()\n        if word.strip(\".,!?\").lower() not in stopwords\n    ]\n    frequency: Dict[str, int] = {}\n    for word in words:\n        frequency[word] = frequency.get(word, 0) + 1\n    return frequency"
+  },
+  {
+    "pair_id": "py_algorithms_002",
+    "category": "algorithms",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def find_duplicates(nums: List[int]) -> Set[int]:\n    seen: Set[int] = set()\n    duplicates: Set[int] = set()\n\n    for num in nums:\n        if num in seen:\n            duplicates.add(num)\n        else:\n            seen.add(num)\n\n    return duplicates"
+  },
+  {
+    "pair_id": "py_algorithms_003",
+    "category": "algorithms",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def find_pairs_with_sum(nums: List[int], target: int) -> Set[Tuple[int, int]]:\n    seen: Set[int] = set()\n    pairs: Set[Tuple[int, int]] = set()\n\n    for num in nums:\n        complement: int = target - num\n        if complement in seen:\n            pair: Tuple[int, int] = tuple(sorted((num, complement)))\n            pairs.add(pair)\n        seen.add(num)\n\n    return pairs"
+  },
+  {
+    "pair_id": "py_algorithms_004",
+    "category": "algorithms",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def topological_sort(edges: List[Tuple[int, int]]) -> List[int]:\n    graph: Dict[int, List[int]] = {}\n    in_degree: Dict[int, int] = {}\n\n    for u, v in edges:\n        graph.setdefault(u, []).append(v)\n        in_degree[v] = in_degree.get(v, 0) + 1\n        in_degree.setdefault(u, 0)\n\n    queue: List[int] = [node for node in in_degree if in_degree[node] == 0]\n    result: List[int] = []\n\n    while queue:\n        node: int = queue.pop(0)\n        result.append(node)\n        for neighbor in graph.get(node, []):\n            in_degree[neighbor] -= 1\n            if in_degree[neighbor] == 0:\n                queue.append(neighbor)\n\n    return result if len(result) == len(in_degree) else []"
+  },
+  {
+    "pair_id": "py_utility_functions_000",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import Any, Dict, List, Optional, TypeVar, Callable, Iterable, Set, Tuple\nimport json\nimport time\nimport random\nimport string\nimport hashlib\nfrom datetime import datetime, timedelta\n\nT = TypeVar('T')\n\ndef flatten_dict(nested_dict: Dict[str, Any], parent_key: str = '', sep: str = '_') -> Dict[str, Any]:\n    flattened: Dict[str, Any] = {}\n    for key, value in nested_dict.items():\n        new_key: str = f\"{parent_key}{sep}{key}\" if parent_key else key\n        if isinstance(value, dict):\n            flattened.update(flatten_dict(value, new_key, sep=sep))\n        else:\n            flattened[new_key] = value\n    return flattened"
+  },
+  {
+    "pair_id": "py_utility_functions_001",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def chunk_list(items: List[T], chunk_size: int) -> List[List[T]]:\n    if chunk_size <= 0:\n        raise ValueError(\"Chunk size must be positive\")\n    return [items[i:i + chunk_size] for i in range(0, len(items), chunk_size)]"
+  },
+  {
+    "pair_id": "py_utility_functions_002",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def timeit(func: Callable[..., T]) -> Callable[..., Tuple[T, float]]:\n    def wrapper(*args: Any, **kwargs: Any) -> Tuple[T, float]:\n        start_time: float = time.perf_counter()\n        result: T = func(*args, **kwargs)\n        end_time: float = time.perf_counter()\n        return result, end_time - start_time\n    return wrapper"
+  },
+  {
+    "pair_id": "py_utility_functions_003",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def generate_random_string(length: int = 10, chars: str = string.ascii_letters + string.digits) -> str:\n    if length <= 0:\n        raise ValueError(\"Length must be positive\")\n    return ''.join(random.choice(chars) for _ in range(length))"
+  },
+  {
+    "pair_id": "py_utility_functions_004",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def get_hash(input_data: str, algorithm: str = 'sha256') -> str:\n    hash_func: Callable[[bytes], Any] = getattr(hashlib, algorithm)\n    return hash_func(input_data.encode('utf-8')).hexdigest()"
+  },
+  {
+    "pair_id": "py_utility_functions_005",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def find_duplicates(items: Iterable[T]) -> Set[T]:\n    seen: Set[T] = set()\n    duplicates: Set[T] = set()\n    for item in items:\n        if item in seen:\n            duplicates.add(item)\n        else:\n            seen.add(item)\n    return duplicates"
+  },
+  {
+    "pair_id": "py_utility_functions_006",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def parse_json_safe(json_str: str, default: Any = None) -> Optional[Dict[str, Any]]:\n    try:\n        parsed: Dict[str, Any] = json.loads(json_str)\n        return parsed\n    except (json.JSONDecodeError, TypeError):\n        return default"
+  },
+  {
+    "pair_id": "py_utility_functions_007",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def date_range(start_date: datetime, end_date: datetime, delta: timedelta = timedelta(days=1)) -> List[datetime]:\n    current_date: datetime = start_date\n    dates: List[datetime] = []\n    while current_date <= end_date:\n        dates.append(current_date)\n        current_date += delta\n    return dates"
+  },
+  {
+    "pair_id": "py_utility_functions_008",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def deep_get(dictionary: Dict[str, Any], keys: List[str], default: Any = None) -> Any:\n    current: Any = dictionary\n    for key in keys:\n        if isinstance(current, dict) and key in current:\n            current = current[key]\n        else:\n            return default\n    return current"
+  },
+  {
+    "pair_id": "py_utility_functions_009",
+    "category": "utility_functions",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable[[Callable[..., T]], Callable[..., T]]:\n    def decorator(func: Callable[..., T]) -> Callable[..., T]:\n        def wrapper(*args: Any, **kwargs: Any) -> T:\n            last_exception: Optional[Exception] = None\n            for attempt in range(1, max_attempts + 1):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    last_exception = e\n                    if attempt < max_attempts:\n                        time.sleep(delay * attempt)\n            raise last_exception if last_exception else Exception(\"Unknown error\")\n        return wrapper\n    return decorator"
+  },
+  {
+    "pair_id": "py_api_data_processing_000",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, Optional\nimport aiohttp\nimport asyncio\n\nclass UserProfile(TypedDict):\n    id: int\n    username: str\n    email: str\n    is_active: bool\n\nasync def fetch_user_profile(user_id: int, session: aiohttp.ClientSession) -> Optional[UserProfile]:\n    url: str = f\"https://api.example.com/users/{user_id}\"\n    try:\n        async with session.get(url) as response:\n            if response.status == 200:\n                data: UserProfile = await response.json()\n                return data\n    except aiohttp.ClientError:\n        pass\n    return None"
+  },
+  {
+    "pair_id": "py_api_data_processing_001",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, List, AsyncIterator\nimport asyncio\n\nclass StockPrice(TypedDict):\n    symbol: str\n    price: float\n    timestamp: str\n\nasync def stream_stock_prices(symbols: List[str], interval: float = 1.0) -> AsyncIterator[StockPrice]:\n    for symbol in symbols:\n        while True:\n            price: float = await fetch_live_price(symbol)\n            yield {\"symbol\": symbol, \"price\": price, \"timestamp\": str(asyncio.get_event_loop().time())}\n            await asyncio.sleep(interval)"
+  },
+  {
+    "pair_id": "py_api_data_processing_002",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, Dict, Any\nfrom aiohttp import web\n\nclass ErrorResponse(TypedDict):\n    error: str\n    details: Dict[str, Any]\n\nasync def validate_request_data(request: web.Request) -> Dict[str, Any]:\n    try:\n        data: Dict[str, Any] = await request.json()\n        if not data.get(\"required_field\"):\n            raise ValueError(\"Missing required field\")\n        return data\n    except ValueError as e:\n        error: ErrorResponse = {\"error\": str(e), \"details\": {\"input\": await request.text()}}\n        raise web.HTTPBadRequest(body=error)"
+  },
+  {
+    "pair_id": "py_api_data_processing_003",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, Optional, Awaitable\nimport asyncio\n\nclass TaskResult(TypedDict):\n    task_id: str\n    status: str\n    output: Optional[str]\n\nasync def execute_async_task(\n    task_id: str,\n    coroutine: Awaitable[str],\n    timeout: float = 10.0\n) -> TaskResult:\n    try:\n        output: str = await asyncio.wait_for(coroutine, timeout=timeout)\n        return {\"task_id\": task_id, \"status\": \"completed\", \"output\": output}\n    except asyncio.TimeoutError:\n        return {\"task_id\": task_id, \"status\": \"timeout\", \"output\": None}"
+  },
+  {
+    "pair_id": "py_api_data_processing_004",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, List\nfrom dataclasses import dataclass\nimport httpx\n\n@dataclass\nclass PaginatedParams:\n    page: int = 1\n    per_page: int = 20\n\nclass PaginatedResponse(TypedDict):\n    items: List[dict]\n    total: int\n    page: int\n    pages: int\n\nasync def fetch_paginated_data(\n    client: httpx.AsyncClient,\n    endpoint: str,\n    params: PaginatedParams\n) -> PaginatedResponse:\n    response: httpx.Response = await client.get(endpoint, params=params.__dict__)\n    data: PaginatedResponse = response.json()\n    return data"
+  },
+  {
+    "pair_id": "py_api_data_processing_005",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, AsyncGenerator\nimport asyncpg\n\nclass DatabaseRecord(TypedDict):\n    id: int\n    name: str\n    created_at: str\n\nasync def query_records_in_batches(\n    pool: asyncpg.Pool,\n    batch_size: int = 100\n) -> AsyncGenerator[List[DatabaseRecord], None]:\n    async with pool.acquire() as conn:\n        offset: int = 0\n        while True:\n            records: List[DatabaseRecord] = await conn.fetch(\n                \"SELECT id, name, created_at FROM records ORDER BY id LIMIT $1 OFFSET $2\",\n                batch_size, offset\n            )\n            if not records:\n                break\n            yield records\n            offset += batch_size"
+  },
+  {
+    "pair_id": "py_api_data_processing_006",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, Callable, Any\nfrom functools import wraps\nimport asyncio\n\nclass RetryConfig(TypedDict):\n    max_attempts: int\n    delay: float\n\ndef async_retry(config: RetryConfig):\n    def decorator(coro: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:\n        @wraps(coro)\n        async def wrapper(*args: Any, **kwargs: Any) -> Any:\n            last_error: Exception | None = None\n            for attempt in range(config[\"max_attempts\"]):\n                try:\n                    return await coro(*args, **kwargs)\n                except Exception as e:\n                    last_error = e\n                    await asyncio.sleep(config[\"delay\"])\n            raise last_error if last_error else RuntimeError(\"Unknown error\")\n        return wrapper\n    return decorator"
+  },
+  {
+    "pair_id": "py_api_data_processing_007",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, Dict, Optional\nfrom redis.asyncio import Redis\n\nclass CacheResult(TypedDict):\n    value: Optional[str]\n    source: str\n\nasync def get_cached_or_fetch(\n    redis: Redis,\n    key: str,\n    fetch_func: Callable[[], Awaitable[str]],\n    ttl: int = 3600\n) -> CacheResult:\n    cached: Optional[bytes] = await redis.get(key)\n    if cached:\n        return {\"value\": cached.decode(), \"source\": \"cache\"}\n\n    value: str = await fetch_func()\n    await redis.setex(key, ttl, value)\n    return {\"value\": value, \"source\": \"fetched\"}"
+  },
+  {
+    "pair_id": "py_api_data_processing_008",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, List, Tuple\nfrom asyncio import Queue\n\nclass WorkerTask(TypedDict):\n    task_id: str\n    data: dict\n\nasync def process_tasks_concurrently(\n    task_queue: Queue[WorkerTask],\n    worker_count: int = 4\n) -> List[Tuple[str, bool]]:\n    async def worker() -> None:\n        while not task_queue.empty():\n            task: WorkerTask = await task_queue.get()\n            success: bool = await handle_task(task[\"data\"])\n            results.append((task[\"task_id\"], success))\n            task_queue.task_done()\n\n    results: List[Tuple[str, bool]] = []\n    workers: List[asyncio.Task] = [asyncio.create_task(worker()) for _ in range(worker_count)]\n    await asyncio.gather(*workers)\n    return results"
+  },
+  {
+    "pair_id": "py_api_data_processing_009",
+    "category": "api_data_processing",
+    "language": "python",
+    "language_family": "python",
+    "typing": "typed",
+    "code": "from typing import TypedDict, Literal, Optional\nfrom fastapi import Request\n\nclass WebhookEvent(TypedDict):\n    event_type: Literal[\"created\", \"updated\", \"deleted\"]\n    payload: dict\n\nasync def verify_webhook_signature(\n    request: Request,\n    secret: str\n) -> Optional[WebhookEvent]:\n    signature: str = request.headers.get(\"X-Signature\", \"\")\n    body: bytes = await request.body()\n\n    if not await validate_signature(body, signature, secret):\n        return None\n\n    event: WebhookEvent = await request.json()\n    return event"
+  }
+]
