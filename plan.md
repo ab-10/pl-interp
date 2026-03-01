@@ -1,18 +1,24 @@
-# Pipeline Infrastructure Plan
+# Pipeline Plan
+
+**Core pipeline**: Gather activations → Train SAE → Linear probe → SAE steering
+
+**Current model**: Ministral-8B-Instruct-2410 (36 decoder layers, hidden dim 4096)
+**Evaluation**: HumanEval (164 tasks) for steering, MBPP + HumanEval for SAE training
+**Hardware**: 2× H100 NVL (96GB each)
 
 ## Decisions and Reasoning
 
-### Activation capture: generated tokens only, layer 16 only
+### Activation capture: generated tokens only, multi-layer
 
-**Choice**: Capture activations only at generated token positions, not prompt tokens. Capture only layer 16, not layer 24.
+**Choice**: Capture activations only at generated token positions, not prompt tokens. Capture at two layers — 50% and 75% of model depth. For Ministral-8B (36 layers): layers 18 and 27. Configurable per model via `config.py` `capture_layers` property.
 
 **Alternatives considered for token scope**:
 - *Full sequence (prompt + generation)*: Would let us study how prompt representation affects features, but roughly doubles storage (~100GB → ~200GB per layer) and mixes prompt-variant signal into SAE training data. The SAE would learn "prompt format" features rather than "code structure" features.
 - *Last token only*: Tiny storage (~2GB total) but loses all token-level resolution. Only useful for generation-level classification, not mechanistic interpretability. We couldn't say "this feature fires on assert statements."
 
-**Why generated tokens only**: We want token-level features ("this feature fires on type annotations") without paying for prompt tokens that just encode the task description. ~50GB is manageable. The generated tokens are where the model's "decisions" about code structure live.
+**Why generated tokens only**: We want token-level features ("this feature fires on type annotations") without paying for prompt tokens that just encode the task description. The generated tokens are where the model's "decisions" about code structure live.
 
-**Why layer 16 only, not also layer 24**: Layer 16 is at the 50% point (16/32) where models build the richest semantic representations — this is where structural properties like typedness and decomposition should be most clearly encoded. Layer 24 (75%) is more output-oriented, with features mapping to token predictions rather than structural concepts. Capturing a second layer doubles storage (~50GB → ~100GB) and doubles the downstream work (contrastive vectors per layer, SAE per layer, analysis per layer) for uncertain additional value. If layer 16 results are weak, we can re-run capture for layer 24 — the generation and evaluation data is already saved.
+**Why two layers**: Layer 18 (50%) captures mid-network semantic representations where structural properties should be most clearly encoded. Layer 27 (75%) captures late-network refinement where the model is committing to output decisions. Comparing both reveals whether steering is more effective at the representational or decisional stage. Our probe results confirm this matters: layer 27 achieves 0.870 AUC vs layer 18's 0.846.
 
 ### Inference strategy: vLLM generate → HuggingFace teacher-forcing
 
@@ -60,31 +66,39 @@ TL's speed disadvantage is a secondary concern, and the explanation is more nuan
 
 **Why HumanEval for steering**: The SAE trains on *activations*, not on tasks. Activations from HumanEval and MBPP live in the same model activation space (both are code generation through Mistral 7B). Features learned on MBPP activations fire on HumanEval activations just fine. HumanEval's lower pass rate (38% vs MBPP's 50%) is actually *better* for steering — more room to show improvement, tasks sit right at the capability boundary where representation changes have the most leverage. And HumanEval is the canonical eval, making results directly comparable to published work.
 
-### SAE (stretch goal): TopK, 32k features, K=64, stratified training on layer 16
+### SAE: TopK, 16k features, K=64, stratified training, per-layer
 
 **Architecture choice**: TopK over ReLU because TopK enforces exact sparsity (no L1 penalty tuning), gives better reconstruction quality, and is the current standard (Anthropic's published SAE work). K=64 means 64 features active per token position.
 
-**Why 32k features, not 65k**: With a 2M token training budget, each feature sees ~2M × (64/32k) = ~4k activation events. Sufficient for 32k features. 65k would give ~2k events per feature — borderline, with more dead features. 32k means faster analysis, fewer dead features, and we only need 3 steering candidates.
+**Why 16k features (4× expansion), not 131k (32×)**: Our first attempt used 131k features and resulted in 83% dead features due to insufficient data-to-feature ratio (~11 tokens per feature). Reducing to 16k brought dead features down to ~10% while maintaining 84.5% variance explained. The 16k SAE has ~880 tokens per feature — well above the threshold for meaningful learning.
 
 **Stratified training**: Sample activation tokens 50/50 from pass and fail generations. Without this, the SAE would mostly see activations from easier MBPP tasks (50% pass rate) — learning "common code patterns" rather than "patterns that distinguish success from failure." Implementation: maintain separate token pools for pass/fail, interleave during batch construction.
 
-**Token budget**: 2M tokens (out of ~6M total). Sufficient for 32k features, keeps training under 30 minutes on a single H100.
+**Token budget**: 10M tokens (~7 epochs over 1.4M unique tokens). Keeps training under 30 minutes on a single H100.
 
-**Why layer 16**: It's at the 50% point (16/32) where models build the richest semantic representations. Layer 24 (75%) is more output-oriented — features there tend to map to token predictions rather than structural concepts. Since we're looking for features corresponding to *structural properties* (types, invariants, decomposition), we want the representational layer.
+**Per-layer training**: A separate SAE is trained for each capture layer (18 and 27). Each layer's activations live in a different region of activation space, so they need independent SAEs.
 
-### Steering approach: SAE primary, contrastive vectors as fallback
+### Feature selection: Linear probe (not Cohen's d)
 
-**Choice**: Train an SAE on captured activations and use SAE feature directions for steering (primary path). Compute contrastive vectors (difference-in-means between variant and baseline activations) as a guaranteed fallback if SAE training is slow, features are hard to interpret, or results are unclear.
+**Choice**: Train a logistic regression probe on SAE features to find which features jointly predict pass/fail. Project the probe weight vector back through the SAE decoder to get a steering direction in hidden-state space.
 
-**Why SAE primary**: The SAE decomposes the activation space into sparse, specific features that may be more surgically effective for steering than coarse contrastive directions. It enables discovery of features we didn't design variants for (surprise findings). It also produces the stronger scientific story — "we found specific internal features that correspond to structural properties" is more mechanistically informative than "we found that the average typed-vs-baseline direction works for steering."
+**Why probe over Cohen's d**: Cohen's d computes univariate effect sizes per feature. In practice, it selected near-dead features with inflated effect sizes (d=500k+) — features that fire a handful of times for one condition, giving technically huge but meaningless separation. Zero overlap between Cohen's d top features and probe top features. The probe finds features that are *jointly* predictive across the full dataset, handling redundancy and interactions.
 
-**Why keep contrastive as fallback**: Contrastive vectors are trivial to compute from the same captured activations — no training step, no hyperparameters, no dead-feature risk. They're interpretable by construction ("this is the typed direction" = mean(typed activations) − mean(baseline activations) at layer 16). If SAE analysis hits any snag, contrastive vectors guarantee a working demo with zero additional compute. They can also serve as a comparison: do SAE features steer more precisely than the coarse contrastive direction?
+**Why project through W_dec**: The probe learns a weight vector w ∈ R^{d_sae} in SAE feature space. The steering direction in hidden-state space is `direction = w @ W_dec` where W_dec is the SAE decoder matrix (d_sae, d_model). This gives a single (d_model,) vector that is the optimal linear combination of SAE decoder columns, weighted by predictive power.
 
-### Steer layer: layer 16
+**Direction sign**: The probe direction may point from pass→fail rather than fail→pass after projection through W_dec. We test both the original and flipped (negated) direction.
 
-**Choice**: Inject steering vectors (both contrastive and SAE-based) at layer 16.
+### Steering approach: SAE-projected probe direction primary, contrastive as comparison
 
-**Why layer 16**: It's where we capture activations and train the SAE. Contrastive vectors are computed in this space, so no projection is needed. Standard practice is to steer at the same layer the directions were derived from.
+**Choice**: The primary steering direction is the probe weight vector projected through the SAE decoder. Contrastive vectors (difference-in-means) serve as a comparison baseline. Individual SAE feature decoder rows are also tested but are expected to be weaker (too narrow/sparse).
+
+**Why probe direction over individual features**: Individual SAE features are too narrow and sparse for effective steering. Our best single-feature delta was +1.2% (not significant). The probe combines all 16k features optimally, producing a direction norm of ~8-10 vs ~1.0 for individual features — a much stronger, more coherent signal.
+
+### Steer layer: same as capture/SAE layer
+
+**Choice**: Inject steering vectors at the same layer the SAE was trained on. For Ministral-8B: layer 18 or layer 27.
+
+**Why match layers**: The SAE decoder columns define directions in the activation space of a specific layer. Steering at a different layer would require a projection that we don't have. Standard practice is to steer at the same layer the directions were derived from.
 
 ### Steering: decode-only (not prefill)
 
@@ -99,19 +113,21 @@ TL's speed disadvantage is a secondary concern, and the explanation is more nuan
 def steering_hook(module, input, output):
     hidden_states = output[0]
     if hidden_states.shape[1] == 1:  # decode step only
-        hidden_states = hidden_states + alpha * direction
+        hidden_states = hidden_states + alpha * direction.to(hidden_states.dtype)
     return (hidden_states,) + output[1:]
 ```
 
+**Note**: The `.to(hidden_states.dtype)` cast is required — model runs in float16, direction is float32.
+
 **Note**: With KV caching, there is no "repeated perturbation of old tokens." Each token's hidden state is computed exactly once — during prefill for prompt tokens, during its decode step for generated tokens. The concern about repeated perturbation only applies without KV cache (where the model would recompute the full sequence at each step).
 
-### Alpha values: +3.0, -3.0
+### Alpha values: [0.5, 1.0, 1.5, 3.0, -1.5]
 
-**Choice**: One positive (amplify) plus one negative (sign-flip control), plus a random direction at matched norm as specificity control. Three conditions per direction.
+**Choice**: Wider sweep from gentle to aggressive, plus one negative as sign-flip control.
 
-**Why simplified from {1.0, 3.0, 5.0, -3.0}**: With contrastive vectors as the primary path, we have 5 variant directions (typed, invariants, decomposition, error_handling, control_flow). At 3 conditions each × 164 tasks = 2,460 generations. Adding more alpha values would push into 4-5h territory. The sign-flip at -3.0 is the essential causal control — if +3.0 improves pass rate and -3.0 hurts it, that's strong causal evidence. The random control confirms specificity. We can sweep additional alpha values as a stretch goal.
+**Why this range**: With probe directions of norm ~8-10, aggressive alphas (3.0) at these norms overwhelm the residual stream (hidden states have norm ~3.8) and destroy performance. The signal lives at moderate alphas (0.5-1.5). The negative alpha (-1.5) is the essential causal control — if positive alpha improves and negative hurts, that's strong directional evidence.
 
-**Plus random-direction control**: For each variant direction, also test a random direction at matched norm (α=3.0). If random directions at the same injection magnitude don't help, the effect is specific to the discovered structural direction.
+**Lesson learned**: Our first experiments used only α=±3.0 and saw universal degradation. Expanding to include lower alphas revealed that the directions were valid but the injection magnitude was too high.
 
 ### Token ID preservation
 
@@ -233,101 +249,83 @@ The executor doesn't need to know which dataset — it just runs the script in a
 
 ### Stage 3: Activation Capture (HF teacher-forcing) — ~30 min on 2×H100
 
-Load Mistral 7B via HuggingFace `AutoModelForCausalLM`.
+Load model via HuggingFace `AutoModelForCausalLM`.
 For each generation, feed prompt+generated_tokens (using stored token IDs) as a single forward pass
-with `output_hidden_states=True`. Read `outputs.hidden_states[17]` (layer 16 block output).
+with `output_hidden_states=True`. Read activations at capture layers (18 and 27 for Ministral-8B).
 Extract activations at generated-token positions only (slice using prompt length).
 Batch size 16-32 per GPU. Save as memory-mapped files, sharded by GPU.
 
-**Precise tensor definition**: "Residual stream at layer 16" = the block output of `MistralDecoderLayer` 16,
+**Precise tensor definition**: "Residual stream at layer N" = the block output of decoder layer N,
 i.e., the hidden state after both residual additions (post-attention + post-MLP) within that block.
-In Mistral's architecture, each block does:
-```
-x = x + self_attn(input_layernorm(x))     # post-attention residual
-x = x + mlp(post_attention_layernorm(x))   # post-MLP residual = block output
-```
-This is the standard tensor used in SAE literature and is what `output_hidden_states` returns.
 
 **Indexing**: `hidden_states[0]` = embedding output (before any decoder layer), `hidden_states[i+1]` = output
-of decoder layer `i`. So layer 16 → index 17. **This off-by-one must be validated in the sanity check (see below).**
+of decoder layer `i`. So layer 18 → index 19. **This off-by-one must be validated in the sanity check.**
 
-**Why `output_hidden_states` over hooks for capture**: More robust across model versions — no need to handle
-tuple unpacking (`MistralDecoderLayer.forward()` returns `(hidden_states, attn_weights, present_key_value)`),
-no risk of hooking the wrong module. Memory cost of returning all 33 hidden states: 33 × batch × seq × 4096 × 2 bytes
-= ~2.6GB per batch at batch=16, seq=600. Trivial on 80GB H100. We index layer 16 and discard the rest.
-**Fallback**: If memory spikes due to intermediate buffers, switch to a single `register_forward_hook` on
-`model.model.layers[16]` — captures only one layer's tensor, minimal memory.
+**Multi-layer storage**: Each record stores an `activation_layers` dict keyed by layer number string,
+with `{file, offset, length}` per layer. This replaces the old single-layer `activation_file`/`activation_offset`/`activation_length` fields.
 
-### Stage 4: SAE Training — ~30 min on 1×H100
+### Stage 4: SAE Training — ~30 min on 1×H100 per layer
 
-Train custom TopK SAE (32k features, K=64) on layer 16 activations.
+Train custom TopK SAE (16k features, K=64) per capture layer.
 Implementation: ~100 lines PyTorch (encoder, TopK activation, decoder, MSE + aux loss).
 No SAELens dependency.
 
 **Stratified training**: Sample activation tokens equally from pass and fail generations (50/50 balance).
 Without this, the SAE would mostly see activations from easier MBPP tasks (50% pass rate),
 learning "common code patterns" rather than "patterns that distinguish success from failure."
-Implementation: maintain separate token pools for pass/fail, alternate batches or interleave.
 
-**Token budget**: ~2M tokens for training. At ~300 generated tokens per generation and ~20k generations,
-the full pool is ~6M tokens. 2M is sufficient for 32k features (each feature sees ~2M × 64/32k ≈ 4k events)
-and keeps training fast.
+**Token budget**: 10M tokens. ~7 epochs over 1.4M unique tokens. Sufficient for 16k features
+(each feature sees ~10M × 64/16k ≈ 40k events).
 
-### Stage 5: SAE Feature Analysis — ~10 min
+### Stage 5a: SAE Feature Analysis — ~10 min per layer
 
-For each of 32k features, compute:
+For each feature, compute:
 - Mean activation on pass vs fail (effect size = Cohen's d)
 - Mean activation per variant (variant correlation)
 - Top activating token snippets (interpretability via gen_token_ids)
-Select top 3 features by success effect size, preferring features that also correlate with a structural variant.
 
-### Stage 6: SAE Steering Experiment — ~30-45 min on 2×H100
+**Note**: Cohen's d feature selection proved unreliable — it selected near-dead features with inflated
+effect sizes (d=500k+). This stage is useful for understanding the SAE's feature space but not for
+selecting steering candidates. The linear probe (Stage 5b) is used for feature selection instead.
 
-For each of 3 SAE candidate features, on HumanEval 164 tasks:
-- α = +3.0 (amplify, using SAE decoder direction d_f)
-- α = -3.0 (sign-flip control)
-- Random SAE feature at matched norm (specificity control)
+### Stage 5b: Linear Probe — ~2 min on 1×GPU per layer
 
-3 features × 3 conditions × 164 tasks = **1,476 generations**.
-Plus 164 baseline generations (no steering) = **1,640 total**.
+For each layer with a trained SAE:
+1. Encode all generation records through the SAE (mean-pool across tokens → one d_sae vector per record)
+2. Train logistic regression (PyTorch, GPU) on SAE features to predict pass/fail
+   - BCE loss + L2 regularization (weight_decay=1e-3)
+   - Adam optimizer, cosine LR schedule, 200 epochs, batch size 4096
+3. Project probe weight vector through SAE decoder: `direction = w @ W_dec` → (d_model,) vector
+4. Save as `probe_direction.pt` in contrastive format: `{"probe_pass_fail": tensor}`
 
-Uses HuggingFace `generate()` with decode-only steering hook at layer 16.
-Batch size 8-16. 1,640 × 600 tokens / 2 GPUs / ~200 tok/s ≈ 30-45 min.
-Record pass/fail + code + steering metadata.
+This is the key step that bridges SAE decomposition → steering direction. The probe finds which features
+are jointly predictive of the label, and the W_dec projection maps that back to the model's activation space.
 
-**Steering hook (decode-only)**: Attach to `model.model.layers[16]`.
-Only inject during decode steps (new token generation), not during prompt prefill:
-```python
-def steering_hook(module, input, output):
-    hidden_states = output[0]
-    if hidden_states.shape[1] == 1:  # decode step only, not prefill
-        hidden_states = hidden_states + alpha * direction
-    return (hidden_states,) + output[1:]
-```
-This avoids distorting the model's comprehension of the task prompt.
-See "Steering: decode-only" decision above for full rationale.
+### Stage 6: SAE Steering Experiment — ~30-45 min on 2×H100 per layer
 
-### Stage 7 (fallback): Contrastive Vectors + Steering
+For each probe direction, on HumanEval 164 tasks:
+- Alphas: [0.5, 1.0, 1.5, 3.0, -1.5]
+- Also test flipped (negated) direction if original doesn't improve pass rate
+- Steer at the same layer the SAE was trained on
 
-**Use if SAE analysis is slow, features are hard to interpret, or results are unclear.**
+Uses HuggingFace `generate()` with decode-only steering hook.
+2 GPU shards of 82 tasks each.
+
+### Stage 7: Analysis
+
+Compute pass rate deltas and Fisher's exact test for statistical significance.
+Compare: baseline pass rate vs steered pass rate at each alpha.
+p < 0.05 for significance.
+
+### Contrastive Vectors (comparison, not fallback)
 
 Compute difference-in-means steering directions for each variant vs baseline:
 ```
 d_typed = mean(activations[variant=="typed"]) - mean(activations[variant=="baseline"])
-d_invariants = mean(activations[variant=="invariants"]) - mean(activations[variant=="baseline"])
 ... (5 directions total)
 ```
-Each direction is a single vector of shape `(4096,)`. No training, no hyperparameters, interpretable by construction.
-
-Then run the same steering protocol: 5 directions × 3 conditions × 164 tasks + 164 baseline = **2,624 generations** (~1-1.5h).
-Uses the same decode-only hook as Stage 6.
-
-**Also useful as comparison**: If SAE steering works, contrastive steering shows whether SAE features
-steer more precisely than the coarse variant-level direction.
-
-### Stage 8 (later): UI Integration
-
-FastAPI server on VM exposing results as static JSON. Next.js dashboard for feature browsing + steering visualization. May fake live steering for demo.
+Each direction is a single vector of shape `(4096,)`. These serve as a comparison to the SAE-probe direction.
+Tested alongside SAE directions in the same steering infrastructure.
 
 ## File Structure
 
@@ -361,26 +359,22 @@ experiments/
 │   ├── model.py                 # TopK SAE implementation (~100 LOC PyTorch)
 │   ├── train.py                 # Stratified training loop (balanced pass/fail sampling)
 │   ├── analyze.py               # Feature-success correlation, variant correlation
-│   └── select_candidates.py     # Top-k feature selection for steering
+│   ├── select_candidates.py     # Top-k feature selection for steering
+│   └── probe.py                 # Linear probe on SAE features → steering direction
 ├── contrastive/                 # (fallback)
 │   ├── __init__.py
 │   ├── compute_directions.py    # Difference-in-means vectors: variant vs baseline
 │   └── analyze.py               # Variant pass rates, structural measurements
 ├── steering/
 │   ├── __init__.py
-│   ├── hook.py                  # Decode-only steering hook (shape[1]==1 gate)
-│   ├── run_sae.py               # SAE feature steering experiment (primary)
-│   ├── run_contrastive.py       # Contrastive vector steering experiment (fallback)
-│   └── analyze_steering.py      # Compute deltas, controls, significance tests
+│   ├── hook.py                  # Decode-only steering hook (shape[1]==1 gate, dtype cast)
+│   ├── run_experiment.py        # Unified steering experiment runner (SAE, probe, contrastive)
+│   └── analyze_steering.py      # Compute deltas, Fisher's exact test, significance
 ├── scripts/
-│   ├── 00_sanity_check.py       # Run all 5 sanity checks before pipeline
-│   ├── 01_generate.py           # Shard by task_id across 2 GPUs, run vLLM generation
-│   ├── 02_evaluate.py           # Run test execution on all generations
-│   ├── 03_capture_activations.py # HF teacher-forcing activation capture, layer 16 only
-│   ├── 04_train_sae.py          # Train SAE on collected activations
-│   ├── 05_sae_steering.py       # SAE-based steering experiments
-│   ├── 06_contrastive.py        # (fallback) Contrastive directions + steering
-│   ├── 07_analyze_all.py        # Final analysis + export results for UI
+│   ├── run_stages_1_3.sh        # Generation, evaluation, activation capture
+│   ├── run_stage_4_sae.sh       # SAE training per layer
+│   ├── run_stages_4_7.sh        # Feature analysis + SAE/contrastive steering (stages 5-8)
+│   └── run_probe_steer.sh       # Probe training + probe steering per layer
 ├── tests/
 │   ├── test_extractor.py        # Code extraction regex, compliance detection, retry logic
 │   ├── test_executor.py         # Sandbox execution, timeout enforcement, signal handling
@@ -426,22 +420,19 @@ class GenerationRecord:
     error_hash: str           # Hash of error message for clustering
 
     # Activation metadata (activations stored separately in mmap files)
-    activation_file: str      # Path to mmap shard file
-    activation_offset: int    # Byte offset within shard
-    activation_length: int    # Number of token positions
+    activation_layers: dict   # {layer_num: {"file": str, "offset": int, "length": int}}
 ```
 
 ## Activation Storage Format
 
-Each GPU writes its own shard file (layer 16 only):
+Each GPU writes its own shard file, per capture layer:
 ```
 activations/
-├── layer16/
-│   ├── shard_0.mmap          # GPU 0's activations, shape (N_tokens, 4096), float16
-│   ├── shard_1.mmap          # GPU 1's activations
-│   └── ...
-└── index.json                # Maps (task_id, variant_id, run_id) → (shard, offset, length)
+├── shard_0.npy               # GPU 0's activations, float16, multi-layer
+├── shard_1.npy               # GPU 1's activations
+└── ...
 ```
+Each record's `activation_layers` dict maps layer number → `{file, offset, length}` to index into the shard files.
 
 Memory-mapped files allow the SAE training loop to stream through activations without loading everything into RAM.
 Total storage: ~6M tokens × 4096 × 2 bytes ≈ ~50GB.
@@ -451,21 +442,21 @@ Total storage: ~6M tokens × 4096 × 2 bytes ≈ ~50GB.
 The NC80adis VM has 2× 3.5TB local NVMe drives, RAID0'd and mounted at `/scratch` (7TB total, free with the VM).
 These are ephemeral — data is lost on VM deallocation (not reboot).
 
-**During pipeline execution**: All intermediate and output data writes go to `/scratch`:
-- `/scratch/generations/` — JSONL shards (`shard_0.jsonl`, `shard_1.jsonl`), one line per GenerationRecord, appendable and crash-safe
-- `/scratch/activations/` — memory-mapped numpy files (`shard_0.npy`, `shard_1.npy`), float16, shape (N_tokens, 4096). Each GenerationRecord stores `activation_file`, `activation_offset`, `activation_length` to index in.
-- `/scratch/sae/` — SAE checkpoints (`model.pt`), training log (`training_log.jsonl`)
-- `/scratch/steering/` — steering results as JSONL (`sae_steering.jsonl`, `contrastive_steering.jsonl`), same GenerationRecord format with added steering metadata
-- `/scratch/analysis/` — final outputs (`pass_rates.csv`, `feature_candidates.json`)
+**During pipeline execution**: All intermediate and output data writes go to `/scratch/<model>/`:
+- `/scratch/<model>/generations/` — JSONL shards, one line per GenerationRecord, appendable and crash-safe
+- `/scratch/<model>/activations/` — memory-mapped numpy files, float16. Each record's `activation_layers` dict indexes into these.
+- `/scratch/<model>/sae/layer_<N>/` — SAE checkpoints per capture layer
+- `/scratch/<model>/steering/layer_<N>/` — steering results as JSONL, per layer
+- `/scratch/<model>/analysis/layer_<N>/` — probe directions, feature stats, steering results per layer
 
 **Why JSONL for records**: ~20k records total — no need for SQLite query overhead or Parquet's write-once constraint. JSONL is appendable (one complete record per line), human-readable for debugging, and trivially shardable across GPU processes. Load into DataFrame for analysis.
 
 **After pipeline completes**: Copy final results to the persistent OS disk:
 ```bash
-rsync -av /scratch/generations/ ~/results/generations/
-rsync -av /scratch/sae/ ~/results/sae/
-rsync -av /scratch/steering/ ~/results/steering/
-# Skip raw activations (~50GB) unless needed — they're regenerable from stored token IDs
+rsync -av /scratch/<model>/sae/ ~/results/<model>/sae/
+rsync -av /scratch/<model>/steering/ ~/results/<model>/steering/
+rsync -av /scratch/<model>/analysis/ ~/results/<model>/analysis/
+# Skip raw activations (~50GB) — they're regenerable from stored token IDs
 ```
 
 **Why**: NVMe is significantly faster for the large sequential writes during activation capture
@@ -506,45 +497,47 @@ Note: The `[INST]...[/INST]` wrapper is Mistral's chat template. Exact template 
 
 ## Steering Experiment Design
 
-### Primary: SAE feature steering
+### Primary: Probe-projected SAE steering
 
-For each of top 3 SAE features by success effect size (d_f = SAE decoder direction):
+For the probe direction projected through W_dec (per layer):
 ```
 Conditions per task (HumanEval 164 tasks):
-  1. baseline:    no intervention (shared across all features, run once)
-  2. amplify:     h' = h + 3.0 · d_f    at layer 16 (decode only)
-  3. suppress:    h' = h + (-3.0) · d_f  at layer 16 (decode only)
-  4. random_ctrl: h' = h + 3.0 · d_rand  at layer 16 (matched norm, decode only)
+  1. baseline:         no intervention (run once)
+  2. steer α=0.5:      h' = h + 0.5 · d_probe   at layer N (decode only)
+  3. steer α=1.0:      h' = h + 1.0 · d_probe   at layer N (decode only)
+  4. steer α=1.5:      h' = h + 1.5 · d_probe   at layer N (decode only)
+  5. steer α=3.0:      h' = h + 3.0 · d_probe   at layer N (decode only)
+  6. steer α=-1.5:     h' = h + (-1.5) · d_probe at layer N (decode only)
 ```
 
-164 baseline + 3 features × 3 conditions × 164 tasks = **1,640 steering generations**.
+If results suggest the direction is inverted (negative alpha helps more than positive),
+also test the flipped direction: d_probe_flipped = -d_probe.
 
-### Fallback: Contrastive vector steering
+164 baseline + 1 direction × 5 alphas × 164 tasks = **984 generations per layer**.
+With 2 layers: ~1,968 total. With flipped direction: ~2,952 total.
 
-For each contrastive direction d (typed, invariants, decomposition, error_handling, control_flow):
-```
-Same conditions as above, using d = mean(variant activations) - mean(baseline activations).
-```
+### Comparison: Contrastive vector steering
 
-5 directions × 3 conditions × 164 tasks + 164 baseline = **2,624 generations**.
+Difference-in-means directions computed per variant. Tested alongside probe directions
+using the same infrastructure.
 
 ### Shared details
 
 All steering uses HuggingFace `generate()` with a **decode-only** `register_forward_hook` on
-`model.model.layers[16]`. The hook only fires when `hidden_states.shape[1] == 1` (single-token decode step),
-not during prompt prefill. This keeps task comprehension intact and isolates the effect to generation decisions.
-Batch size 8-16 on 2×H100.
+`model.model.layers[N]` (where N is the capture layer). The hook only fires when
+`hidden_states.shape[1] == 1` (single-token decode step), not during prompt prefill.
+2 GPU shards of 82 tasks each.
 
 ## Claim Structure
 
 | Evidence tier | Source | What you show | Claim you can make |
 |---|---|---|---|
-| Variant pass rates | Stages 1-2 | Typed/invariant/decomposition variants change pass rate | "Structural prompt properties measurably affect code generation success" |
-| SAE feature correlation | Stages 4-5 | SAE features correlate with both success and specific variants | "Internal feature directions correspond to interpretable structural properties" |
-| SAE steering | Stage 6 | Amplifying a feature helps, suppressing hurts | "Feature direction causally influences success, not just correlational" |
-| Random control | Stage 6 | Random features at matched norm don't help | "Effect is specific to the discovered feature, not generic activation injection" |
-| Structural measurement | Stage 6 | Steered code has more type hints / asserts / helpers | "Steering produces the intended structural change, not just 'any improvement'" |
-| Contrastive comparison (fallback/stretch) | Stage 7 | Contrastive directions also work for steering | "Variant-level representation differences are causally active, and SAE decomposes them into finer features" |
+| Variant pass rates | Stages 1-2 | Structural prompt properties change pass rate | "Structural instructions measurably affect code generation" |
+| SAE probe signal | Stages 4-5b | Probe predicts pass/fail at 0.87 AUC from SAE features | "SAE features encode information predictive of code correctness" |
+| SAE steering | Stage 6 | Probe direction causally changes pass rate | "The learned direction causally influences generation quality" |
+| Sign control | Stage 6 | Positive alpha helps, negative hurts (or vice versa) | "Effect is directional, not generic perturbation" |
+| Layer comparison | Stages 5b-6 | Different layers show different probe/steering quality | "Code quality is represented differently at different network depths" |
+| Contrastive comparison | Stage 7 | Contrastive directions compared to probe | "SAE decomposition + probe finds more precise directions than raw difference-in-means" |
 
 ## Sanity Checks (run as `scripts/00_sanity_check.py` before any full pipeline stage)
 
@@ -661,33 +654,22 @@ Documentation lives in the code, with two standalone files:
 
 ## Implementation Order
 
-**Core path (must finish):**
+**Core pipeline:**
 1. `config.py` + `storage/schema.py` — Foundation, everything depends on these
 2. `datasets/load_humaneval.py` + `datasets/load_mbpp.py` — Load and normalize tasks
 3. `prompts/variants.py` + `prompts/builder.py` — Construct prompts for all conditions
-4. `tests/test_prompt_builder.py` — Verify prompt construction before generation
-5. `evaluation/extractor.py` + `evaluation/executor.py` + `evaluation/judge.py` — Test all outputs
-6. `tests/test_extractor.py` + `tests/test_executor.py` — Verify extraction and sandbox before pipeline runs
-7. `generation/vllm_runner.py` — Generate all outputs with exact token ID storage
-8. `generation/activation_capture.py` + `storage/activation_store.py` — Capture layer 16 activations
-9. `tests/test_activation_store.py` — Verify mmap storage round-trip before full capture
-10. `scripts/00_sanity_check.py` — Validate indexing, shapes, determinism, hook gating, token IDs (includes smoke test micro end-to-end)
-11. `scripts/01_generate.py` through `scripts/03_capture_activations.py` — Wire and run stages 1-3
-12. `sae/model.py` + `sae/train.py` — Custom TopK SAE with stratified training
-13. `tests/test_sae_model.py` — Verify TopK sparsity, gradient flow before training run
-14. `sae/analyze.py` + `sae/select_candidates.py` — Feature analysis + candidate selection
-15. `steering/hook.py` + `steering/run_sae.py` — Decode-only hook + SAE feature steering
-16. `tests/test_steering_hook.py` — Verify tuple handling, decode-only gating, α=0 no-op before steering runs
-17. `steering/analyze_steering.py` — Compute deltas, run tests, export results
+4. `evaluation/extractor.py` + `evaluation/executor.py` + `evaluation/judge.py` — Test all outputs
+5. `generation/vllm_runner.py` — Generate all outputs with exact token ID storage
+6. `generation/activation_capture.py` + `storage/activation_store.py` — Multi-layer activation capture
+7. `sae/model.py` + `sae/train.py` — Custom TopK SAE with stratified training
+8. `sae/analyze.py` — Feature-level analysis (Cohen's d, variant correlation)
+9. `sae/probe.py` — **Linear probe on SAE features → steering direction** (the key new step)
+10. `steering/hook.py` + `steering/run_experiment.py` — Decode-only hook + unified steering runner
+11. `steering/analyze_steering.py` — Fisher's exact test, pass rate deltas
 
-**Fallback path (if SAE hits issues):**
-18. `contrastive/compute_directions.py` — Compute difference-in-means directions (trivial, ~5 min)
-19. `steering/run_contrastive.py` — Contrastive vector steering experiments
-20. Same analysis pipeline as step 17
-
-**Stretch (if time permits after core):**
-21. Run contrastive steering as comparison to SAE steering
-22. UI integration stub
+**Comparison directions (run alongside probe):**
+12. `sae/select_candidates.py` — Individual feature selection (for comparison)
+13. `contrastive/compute_directions.py` — Difference-in-means directions
 
 ## Dependencies (requirements.txt)
 
@@ -713,6 +695,32 @@ See full reasoning in Decisions and Reasoning section above.
 **Contingency**: If we later need per-head/MLP internals, standardized hook-point names, or SAE training
 iteration tooling, TL/SAELens can be reintroduced. The activation data format (float16 tensors of shape
 `(tokens, 4096)`) is framework-agnostic.
+
+## Current Results (Ministral-8B)
+
+### SAE Training
+- 16k features, K=64, 10M tokens, per-layer
+- Layer 18: 84.5% variance explained, 10.6% dead features
+- Layer 27: similar quality
+- Previous 131k SAE attempt: 83% dead features (data-to-feature ratio too low)
+
+### Linear Probe
+- Layer 18: 77.0% accuracy, 0.846 AUC
+- Layer 27: 79.6% accuracy, 0.870 AUC (better — later layer has more refined representations)
+- Top features by probe weight have zero overlap with Cohen's d top features
+
+### Probe Steering (original direction)
+- Layer 18: All positive alphas degrade. α=3.0 gives -18.3% (p=0.0013). Direction points pass→fail.
+- Layer 27: Mild degradation at positive alphas. α=-1.5 gives +1.2% (only positive delta). Suggests inversion.
+
+### Probe Steering (flipped direction) — in progress
+- Testing negated probe direction on layer 27
+- Hypothesis: flipping should make positive alphas push toward passing
+
+### Previous attempts
+- 131k SAE: 83% dead features, universal degradation
+- 16k SAE + Cohen's d: Best delta +1.2% (not significant). Cohen's d selected near-dead features.
+- Contrastive directions: Some reached significance but all negative.
 
 ## Time Budget (12 hours, 2×H100)
 

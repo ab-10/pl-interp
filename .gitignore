@@ -46,3 +46,6 @@ next-env.d.ts
 .venv/
 __pycache__/
 *.egg-info/
+
+# pipeline artifacts (large model checkpoints + analysis outputs)
+/artifacts/
