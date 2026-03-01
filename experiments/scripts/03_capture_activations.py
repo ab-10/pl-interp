@@ -1,8 +1,8 @@
-"""Stage 3: Capture mid-layer activations via HF teacher-forcing.
+"""Stage 3: Capture multi-layer activations via HF teacher-forcing.
 
 Reads: /scratch/<model>/generations/shard_{N}.jsonl (evaluated records with gen_token_ids)
-Writes: /scratch/<model>/activations/shard_{N}.npy (memory-mapped float16 activations)
-Updates: shard JSONL with activation_file, activation_offset, activation_length
+Writes: /scratch/<model>/activations/layer_{L}/shard_{N}.npy per capture layer
+Updates: shard JSONL with activation_layers metadata
 
 Uses HF model (not vLLM) for forward pass with output_hidden_states=True.
 Sharded by GPU — each shard processes its own generation records.
@@ -29,7 +29,7 @@ from experiments.storage.schema import read_records
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Stage 3: Capture mid-layer activations via HF teacher-forcing.",
+        description="Stage 3: Capture multi-layer activations via HF teacher-forcing.",
     )
     config.add_model_arg(parser)
     parser.add_argument(
@@ -54,15 +54,15 @@ def main() -> int:
             "model": config.MODEL_NAME,
             "model_id": config.MODEL_ID,
             "shard": args.shard,
-            "capture_layer": config.CAPTURE_LAYER,
-            "hidden_states_index": config.HIDDEN_STATES_INDEX,
+            "capture_layers": config.CAPTURE_LAYERS,
+            "hidden_states_indices": config.HIDDEN_STATES_INDICES,
             "hidden_dim": config.MODEL_HIDDEN_DIM,
             "batch_size": args.batch_size,
         },
     )
 
     # --- Load evaluated records ---
-    print(f"Model: {config.MODEL_NAME} (capture layer {config.CAPTURE_LAYER})")
+    print(f"Model: {config.MODEL_NAME} (capture layers {config.CAPTURE_LAYERS})")
     shard_file = config.GENERATIONS_DIR / f"shard_{args.shard}.jsonl"
     if not shard_file.exists():
         print(f"Shard file not found: {shard_file}")
@@ -72,7 +72,7 @@ def main() -> int:
     print(f"Loaded {len(records)} records from {shard_file}")
 
     # Skip records that already have activations (for resume)
-    pending = [r for r in records if not r.activation_file]
+    pending = [r for r in records if not r.activation_layers]
     if len(pending) < len(records):
         print(f"  Skipping {len(records) - len(pending)} already-captured records")
     if not pending:
@@ -83,11 +83,16 @@ def main() -> int:
     print(f"Loading model {config.MODEL_ID} for activation capture...")
     capture = ActivationCapture()
 
-    # --- Initialize activation writer ---
-    config.ACTIVATIONS_DIR.mkdir(parents=True, exist_ok=True)
-    act_path = config.ACTIVATIONS_DIR / f"shard_{args.shard}.npy"
-    writer = ActivationWriter(act_path)
-    print(f"Writing activations to {act_path}")
+    # --- Initialize per-layer activation writers ---
+    writers: dict[int, ActivationWriter] = {}
+    act_paths: dict[int, Path] = {}
+    for layer_num in config.CAPTURE_LAYERS:
+        layer_dir = config.ACTIVATIONS_DIR / f"layer_{layer_num}"
+        layer_dir.mkdir(parents=True, exist_ok=True)
+        act_path = layer_dir / f"shard_{args.shard}.npy"
+        writers[layer_num] = ActivationWriter(act_path)
+        act_paths[layer_num] = act_path
+        print(f"  Layer {layer_num} -> {act_path}")
 
     # --- Capture in batches ---
     t0 = time.time()
@@ -96,14 +101,21 @@ def main() -> int:
     for i in range(0, len(pending), args.batch_size):
         batch = pending[i : i + args.batch_size]
 
+        # Returns list of {layer_num: np.ndarray} per record
         activations = capture.capture_batch(batch, batch_size=len(batch))
 
-        for record, acts in zip(batch, activations):
-            offset, length = writer.append(acts)
-            record.activation_file = str(act_path)
-            record.activation_offset = offset
-            record.activation_length = length
-            total_tokens += length
+        for record, layer_acts in zip(batch, activations):
+            record.activation_layers = {}
+            for layer_num, acts in layer_acts.items():
+                offset, length = writers[layer_num].append(acts)
+                record.activation_layers[layer_num] = {
+                    "file": str(act_paths[layer_num]),
+                    "offset": offset,
+                    "length": length,
+                }
+            # Token count is same across layers; use first
+            first_layer = config.CAPTURE_LAYERS[0]
+            total_tokens += record.activation_layers[first_layer]["length"]
 
         done = i + len(batch)
         elapsed = time.time() - t0
@@ -111,7 +123,9 @@ def main() -> int:
         print(f"  {done}/{len(pending)} records ({total_tokens} tokens, {rate:.1f} rec/s)")
 
     elapsed = time.time() - t0
-    print(f"\nCapture complete: {len(pending)} records, {total_tokens} tokens in {elapsed:.1f}s")
+    layers_str = "+".join(str(l) for l in config.CAPTURE_LAYERS)
+    print(f"\nCapture complete: {len(pending)} records, {total_tokens} tokens, "
+          f"layers [{layers_str}] in {elapsed:.1f}s")
 
     # --- Write updated records (atomic: tmp + rename) ---
     tmp_path = shard_file.with_suffix(".tmp")

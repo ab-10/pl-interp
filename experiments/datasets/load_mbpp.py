@@ -49,3 +49,17 @@ def load_mbpp() -> list[dict]:
             })
 
     return tasks
+
+
+def load_mbpp_plus_tests() -> dict[str, list[str]]:
+    """Load MBPP+ augmented test cases (378 tasks, harder assertions).
+
+    Returns dict mapping task_id ("mbpp_2") -> list of assertion strings.
+    These supplement the original MBPP test_list for stricter evaluation.
+    """
+    ds = load_dataset("evalplus/mbppplus", split="test")
+    tests: dict[str, list[str]] = {}
+    for row in ds:
+        task_id = f"mbpp_{row['task_id']}"
+        tests[task_id] = row["test_list"]
+    return tests

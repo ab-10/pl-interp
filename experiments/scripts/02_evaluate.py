@@ -20,7 +20,7 @@ import wandb
 
 from experiments import config
 from experiments.datasets.load_humaneval import load_humaneval
-from experiments.datasets.load_mbpp import load_mbpp
+from experiments.datasets.load_mbpp import load_mbpp, load_mbpp_plus_tests
 from experiments.evaluation.executor import execute_code
 from experiments.evaluation.judge import (
     build_humaneval_test_script,
@@ -61,6 +61,8 @@ def main() -> int:
     print("Loading datasets for test harnesses...")
     humaneval_tasks = {t["task_id"]: t for t in load_humaneval()}
     mbpp_tasks = {t["task_id"]: t for t in load_mbpp()}
+    mbpp_plus = load_mbpp_plus_tests()
+    print(f"  MBPP+ augmented tests for {len(mbpp_plus)} tasks")
 
     # --- Find shard files ---
     shard_files = sorted(input_dir.glob("shard_*.jsonl"))
@@ -89,8 +91,10 @@ def main() -> int:
                 )
             else:
                 task = mbpp_tasks[record.task_id]
+                # Use MBPP+ augmented tests when available (stricter)
+                test_list = mbpp_plus.get(record.task_id, task["test_list"])
                 test_script = build_mbpp_test_script(
-                    record.extracted_code, task["test_list"], task["test_setup_code"]
+                    record.extracted_code, test_list, task["test_setup_code"]
                 )
 
             # Execute in sandbox

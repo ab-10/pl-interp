@@ -38,10 +38,9 @@ class GenerationRecord:
     error_message: str        # Raw error message (if any)
     error_hash: str           # Hash of error message for clustering
 
-    # Activation metadata (activations stored separately in mmap files)
-    activation_file: str      # Path to mmap shard file
-    activation_offset: int    # Row offset within shard (number of token rows before this record)
-    activation_length: int    # Number of token positions in this record's activation slice
+    # Activation metadata (per-layer, stored separately in mmap files)
+    # Keys are layer numbers (as strings in JSON), values are {file, offset, length}
+    activation_layers: dict   # {layer_num: {"file": str, "offset": int, "length": int}}
 
     def to_json_line(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False)
@@ -99,9 +98,7 @@ def make_generation_record(
     failure_category: str = "",
     error_message: str = "",
     error_hash: str = "",
-    activation_file: str = "",
-    activation_offset: int = 0,
-    activation_length: int = 0,
+    activation_layers: dict | None = None,
 ) -> GenerationRecord:
     """Create a GenerationRecord with sensible defaults for unfilled fields."""
     return GenerationRecord(
@@ -123,7 +120,5 @@ def make_generation_record(
         failure_category=failure_category,
         error_message=error_message,
         error_hash=error_hash,
-        activation_file=activation_file,
-        activation_offset=activation_offset,
-        activation_length=activation_length,
+        activation_layers=activation_layers if activation_layers is not None else {},
     )

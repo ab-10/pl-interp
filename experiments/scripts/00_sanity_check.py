@@ -512,32 +512,43 @@ def full_end_to_end(tokenizer) -> bool:
 
         capture = ActivationCapture()
 
-        act_path = tmp_dir / "activations.npy"
-        writer = ActivationWriter(act_path)
+        # Set up per-layer writers
+        writers: dict[int, ActivationWriter] = {}
+        act_paths: dict[int, Path] = {}
+        for layer_num in config.CAPTURE_LAYERS:
+            act_path = tmp_dir / f"activations_layer_{layer_num}.npy"
+            writers[layer_num] = ActivationWriter(act_path)
+            act_paths[layer_num] = act_path
 
         activations_list = capture.capture_batch(records, batch_size=2)
-        for record, acts in zip(records, activations_list):
-            offset, length = writer.append(acts)
-            record.activation_file = str(act_path)
-            record.activation_offset = offset
-            record.activation_length = length
+        for record, layer_acts in zip(records, activations_list):
+            record.activation_layers = {}
+            for layer_num, acts in layer_acts.items():
+                offset, length = writers[layer_num].append(acts)
+                record.activation_layers[layer_num] = {
+                    "file": str(act_paths[layer_num]),
+                    "offset": offset,
+                    "length": length,
+                }
 
-        # 6. Read back activations and verify
+        # 6. Read back activations and verify (check each layer)
         print("  Verifying activation storage round-trip...")
-        reader = ActivationReader(act_path)
-        for record in records:
-            stored = reader.read(record.activation_offset, record.activation_length)
-            shape_ok = (
-                stored.shape[0] == record.activation_length
-                and stored.shape[1] == config.MODEL_HIDDEN_DIM
-            )
-            _print_result(
-                f"Activations for {record.task_id}",
-                shape_ok,
-                f"shape={stored.shape}, expected=({record.activation_length}, {config.MODEL_HIDDEN_DIM})",
-            )
-            if not shape_ok:
-                all_ok = False
+        for layer_num in config.CAPTURE_LAYERS:
+            reader = ActivationReader(act_paths[layer_num])
+            for record in records:
+                meta = record.activation_layers[layer_num]
+                stored = reader.read(meta["offset"], meta["length"])
+                shape_ok = (
+                    stored.shape[0] == meta["length"]
+                    and stored.shape[1] == config.MODEL_HIDDEN_DIM
+                )
+                _print_result(
+                    f"Activations layer {layer_num} for {record.task_id}",
+                    shape_ok,
+                    f"shape={stored.shape}, expected=({meta['length']}, {config.MODEL_HIDDEN_DIM})",
+                )
+                if not shape_ok:
+                    all_ok = False
 
         # 7. Verify GenerationRecord JSON round-trip
         for record in records:
@@ -546,8 +557,7 @@ def full_end_to_end(tokenizer) -> bool:
             fields_ok = (
                 recovered.task_id == record.task_id
                 and recovered.gen_token_ids == record.gen_token_ids
-                and recovered.activation_offset == record.activation_offset
-                and recovered.activation_length == record.activation_length
+                and recovered.activation_layers == record.activation_layers
             )
             _print_result(f"Record round-trip for {record.task_id}", fields_ok)
             if not fields_ok:
