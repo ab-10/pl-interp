@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-BEDROCK_MODEL_ID = "anthropic.claude-opus-4-6-v1"
+BEDROCK_MODEL_ID = "us.anthropic.claude-opus-4-6-v1"
 BEDROCK_REGION = "us-east-1"
 CONTEXT_WINDOW = 40  # tokens before + after the activation position
 RATE_LIMIT_DELAY = 0.5  # seconds between Bedrock calls
