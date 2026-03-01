@@ -32,7 +32,7 @@ VM access:
 
 ## Basic Setup
 
-**Status:** in-progress
+**Status:** done
 
 **Delivery criteria:**
 1. Drivers installed on the GPU VM
