@@ -56,6 +56,16 @@ export default function FeaturePanel({
     );
   };
 
+  const getBestEffect = (f: EnrichedFeature) => {
+    if (!f.monotonicity) return undefined;
+    const entries = Object.entries(f.monotonicity);
+    if (entries.length === 0) return undefined;
+    const [prop, data] = entries.reduce((best, curr) =>
+      Math.abs(curr[1].effect_size) > Math.abs(best[1].effect_size) ? curr : best
+    );
+    return { property: prop, effectSize: data.effect_size, isMonotonic: data.is_monotonic };
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
@@ -64,6 +74,7 @@ export default function FeaturePanel({
       {steeringFeatures.map((feature) => (
         <FeatureSlider
           key={feature.id}
+          featureId={feature.id}
           label={feature.label}
           value={strengths[feature.id] ?? 0}
           onChange={(v) => onStrengthChange(feature.id, v)}
@@ -72,6 +83,9 @@ export default function FeaturePanel({
           description={feature.description}
           confidence={feature.confidence}
           codeExamples={feature.code_examples}
+          primaryVariant={feature.primary_variant}
+          cohensD={feature.cohens_d}
+          bestEffect={getBestEffect(feature)}
         />
       ))}
 
@@ -97,6 +111,7 @@ export default function FeaturePanel({
               {controlFeatures.map((feature) => (
                 <FeatureSlider
                   key={feature.id}
+                  featureId={feature.id}
                   label={feature.label}
                   value={strengths[feature.id] ?? 0}
                   onChange={(v) => onStrengthChange(feature.id, v)}
@@ -104,6 +119,9 @@ export default function FeaturePanel({
                   description={feature.description}
                   confidence={feature.confidence}
                   codeExamples={feature.code_examples}
+                  primaryVariant={feature.primary_variant}
+                  cohensD={feature.cohens_d}
+                  bestEffect={getBestEffect(feature)}
                 />
               ))}
             </div>
