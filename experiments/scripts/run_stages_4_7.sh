@@ -114,33 +114,37 @@ fi
 echo "$(date): Stage 6 complete"
 echo ""
 
-# --- Stage 7: Contrastive steering (2 GPUs in parallel, ~1-1.5h) ---
-echo "$(date): === Stage 7: Contrastive steering ==="
-CUDA_VISIBLE_DEVICES=0 python3 -m experiments.steering.run_experiment \
-  --directions "$ANALYSIS_DIR/contrastive_directions.pt" \
-  --experiment-name contrastive_steering \
-  --output-dir "$STEERING_DIR" \
-  --shard 0 --num-shards 2 &
-PID_CON0=$!
+# --- Stage 7: Contrastive steering (SKIPPED by default, pass --contrastive to enable) ---
+if [ "${RUN_CONTRASTIVE:-0}" = "1" ]; then
+    echo "$(date): === Stage 7: Contrastive steering ==="
+    CUDA_VISIBLE_DEVICES=0 python3 -m experiments.steering.run_experiment \
+      --directions "$ANALYSIS_DIR/contrastive_directions.pt" \
+      --experiment-name contrastive_steering \
+      --output-dir "$STEERING_DIR" \
+      --shard 0 --num-shards 2 &
+    PID_CON0=$!
 
-CUDA_VISIBLE_DEVICES=1 python3 -m experiments.steering.run_experiment \
-  --directions "$ANALYSIS_DIR/contrastive_directions.pt" \
-  --experiment-name contrastive_steering \
-  --output-dir "$STEERING_DIR" \
-  --shard 1 --num-shards 2 &
-PID_CON1=$!
+    CUDA_VISIBLE_DEVICES=1 python3 -m experiments.steering.run_experiment \
+      --directions "$ANALYSIS_DIR/contrastive_directions.pt" \
+      --experiment-name contrastive_steering \
+      --output-dir "$STEERING_DIR" \
+      --shard 1 --num-shards 2 &
+    PID_CON1=$!
 
-echo "  Contrastive shard 0 PID=$PID_CON0, shard 1 PID=$PID_CON1"
+    echo "  Contrastive shard 0 PID=$PID_CON0, shard 1 PID=$PID_CON1"
 
-FAIL=0
-wait $PID_CON0 || FAIL=1
-wait $PID_CON1 || FAIL=1
+    FAIL=0
+    wait $PID_CON0 || FAIL=1
+    wait $PID_CON1 || FAIL=1
 
-if [ $FAIL -ne 0 ]; then
-    echo "FATAL: Contrastive steering failed. Check logs above."
-    exit 1
+    if [ $FAIL -ne 0 ]; then
+        echo "FATAL: Contrastive steering failed. Check logs above."
+        exit 1
+    fi
+    echo "$(date): Stage 7 complete"
+else
+    echo "$(date): === Stage 7: Contrastive steering SKIPPED (set RUN_CONTRASTIVE=1 to enable) ==="
 fi
-echo "$(date): Stage 7 complete"
 echo ""
 
 # --- Stage 8: Analyze all results ---
