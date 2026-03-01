@@ -55,16 +55,29 @@ def _get_record_sae_features(
     sae: TopKSAE,
     readers: dict[str, ActivationReader],
     device: str,
+    layer: int | None = None,
 ) -> np.ndarray | None:
     """Compute mean SAE feature activations (TopK sparse) for a single record.
 
+    Uses activation_layers dict from the record. If layer is None, uses the
+    first available layer (typically the primary capture layer).
+
     Returns a (d_sae,) float32 array, or None if activations are missing.
     """
-    act_file = record.activation_file
-    if not act_file:
+    if not record.activation_layers:
         return None
 
-    act_path = Path(act_file)
+    # Pick the layer to use
+    if layer is not None:
+        layer_key = str(layer)
+    else:
+        layer_key = next(iter(record.activation_layers))
+
+    if layer_key not in record.activation_layers:
+        return None
+
+    layer_info = record.activation_layers[layer_key]
+    act_path = Path(layer_info["file"])
     key = str(act_path)
     if key not in readers:
         if not act_path.exists():
@@ -72,7 +85,7 @@ def _get_record_sae_features(
         readers[key] = ActivationReader(act_path)
 
     reader = readers[key]
-    raw = reader.read(record.activation_offset, record.activation_length)
+    raw = reader.read(layer_info["offset"], layer_info["length"])
     raw_t = torch.from_numpy(raw.astype(np.float32)).to(device)
 
     with torch.no_grad():
