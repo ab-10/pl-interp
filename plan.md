@@ -724,39 +724,13 @@ iteration tooling, TL/SAELens can be reintroduced. The activation data format (f
 
 ## Time Budget (12 hours, 2×H100)
 
-### Core path (must finish)
+### Per-layer pipeline timing (actual, Ministral-8B on 2×H100)
 
 | Phase | Wall clock | Notes |
 |---|---|---|
-| Build pipeline code | 3-4h | config, datasets, prompts, generation, evaluation, storage, SAE, steering |
-| Sanity checks | 0.25h | scripts/00_sanity_check.py — validate before committing to full runs |
-| Run generation (vLLM) | 1h | 20,484 generations on 2×H100, sharded by task_id |
-| Run evaluation | 0.5h | 20,484 sandboxed test executions, 3s timeout (CPU, overlaps with capture) |
-| Run activation capture | 0.5h | HF teacher-forcing, layer 16 only, on 2×H100 |
-| Train SAE | 0.5h | Single GPU, 2M token budget, stratified pass/fail |
-| SAE feature analysis | 0.25h | Correlation, candidate selection |
-| Build steering code | 0.5h | Decode-only hook + SAE steering runner |
-| Run SAE steering | 0.5-0.75h | 1,640 generations on 2×H100 |
-| Analyze results + export | 0.5h | Pass rate deltas, structural measurements |
-| **Core total** | **~8-10h** | Feasible with some margin |
-
-### Fallback (if SAE hits issues)
-
-| Phase | Wall clock | Notes |
-|---|---|---|
-| Compute contrastive vectors | 0.1h | Difference-in-means, trivial |
-| Run contrastive steering | 1-1.5h | 2,624 generations on 2×H100 |
-| **Fallback total** | **~1.5h** | Guaranteed demo if SAE path fails |
-
-### Stretch (if core finishes early)
-
-| Phase | Wall clock | Notes |
-|---|---|---|
-| Run contrastive steering (as comparison) | 1-1.5h | Compare SAE precision vs contrastive |
-| UI integration stub | 1-2h | FastAPI + static results |
-| **Stretch total** | **~2-3h** | |
-
-### Scoping levers if time is tight
-- Reduce to 2 SAE features instead of 3 — saves ~15min on steering
-- Skip random controls, add them later — saves ~15min
-- Fall back to contrastive immediately — saves SAE training+analysis time (~1h), guaranteed to work
+| Stages 1-3 (gen + eval + capture) | ~3h | 20k generations, multi-layer capture |
+| Stage 4: SAE training | ~30min/layer | 16k features, 10M tokens |
+| Stage 5a: Feature analysis | ~10min/layer | Cohen's d, variant correlation |
+| Stage 5b: Linear probe | ~2min/layer | PyTorch GPU logistic regression |
+| Stage 6: Probe steering | ~30min/layer | 1 direction × 5 alphas × 164 tasks, 2 GPU shards |
+| Stage 7: Analysis | ~1min | Fisher's exact test |
