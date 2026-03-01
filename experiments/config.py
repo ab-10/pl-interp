@@ -21,14 +21,23 @@ class ModelConfig:
     hidden_dim: int = 4096
 
     @property
+    def capture_layers(self) -> list[int]:
+        """50% and 75% points — mid-network semantics and late-network refinement."""
+        return [self.num_layers // 2, 3 * self.num_layers // 4]
+
+    @property
+    def hidden_states_indices(self) -> list[int]:
+        """Indices into output_hidden_states (0 = embeddings, i+1 = layer i)."""
+        return [layer + 1 for layer in self.capture_layers]
+
+    # Backward compat: primary capture layer (50%)
+    @property
     def capture_layer(self) -> int:
-        """50% point of the network — richest semantic representations."""
-        return self.num_layers // 2
+        return self.capture_layers[0]
 
     @property
     def hidden_states_index(self) -> int:
-        """Index into output_hidden_states (0 = embeddings, i+1 = layer i)."""
-        return self.capture_layer + 1
+        return self.hidden_states_indices[0]
 
 
 MODELS: dict[str, ModelConfig] = {
@@ -51,6 +60,9 @@ MODEL_ID: str = ""
 MODEL_DTYPE: str = "float16"
 MODEL_HIDDEN_DIM: int = 4096
 MODEL_NUM_LAYERS: int = 0
+CAPTURE_LAYERS: list[int] = []
+HIDDEN_STATES_INDICES: list[int] = []
+# Backward compat aliases (primary = 50% layer)
 CAPTURE_LAYER: int = 0
 HIDDEN_STATES_INDEX: int = 0
 
@@ -68,7 +80,7 @@ ALL_SCRATCH_DIRS: list[Path] = []
 def set_model(name: str) -> None:
     """Reconfigure all model-dependent settings. Call early, before imports that read config."""
     global MODEL_NAME, MODEL_ID, MODEL_HIDDEN_DIM, MODEL_NUM_LAYERS
-    global CAPTURE_LAYER, HIDDEN_STATES_INDEX
+    global CAPTURE_LAYERS, HIDDEN_STATES_INDICES, CAPTURE_LAYER, HIDDEN_STATES_INDEX
     global SCRATCH_DIR, GENERATIONS_DIR, ACTIVATIONS_DIR
     global SAE_DIR, STEERING_DIR, ANALYSIS_DIR, ALL_SCRATCH_DIRS
 
@@ -80,6 +92,8 @@ def set_model(name: str) -> None:
     MODEL_ID = m.model_id
     MODEL_HIDDEN_DIM = m.hidden_dim
     MODEL_NUM_LAYERS = m.num_layers
+    CAPTURE_LAYERS = m.capture_layers
+    HIDDEN_STATES_INDICES = m.hidden_states_indices
     CAPTURE_LAYER = m.capture_layer
     HIDDEN_STATES_INDEX = m.hidden_states_index
 
@@ -112,8 +126,8 @@ set_model("ministral-8b")
 TEMPERATURE = 0.7
 TOP_P = 0.95
 MAX_NEW_TOKENS = 512
-NUM_RUNS = 3
-BASE_SEED = 42  # seed = BASE_SEED + run_id (42, 43, 44)
+NUM_RUNS = 5
+BASE_SEED = 42  # seed = BASE_SEED + run_id (42, 43, 44, 45, 46)
 NUM_GPUS = 2
 
 # --- Extraction & evaluation ---
