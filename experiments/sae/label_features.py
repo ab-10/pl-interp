@@ -305,7 +305,7 @@ def label_features(
         feat_key = str(feat_idx)
 
         # Skip already-labeled features (resumption)
-        if feat_key in results and results[feat_key].get("label") and results[feat_key]["label"] != "error":
+        if feat_key in results and results[feat_key].get("label") and results[feat_key]["label"] not in ("error", "[dry-run]"):
             logger.info("Skipping feature %d (already labeled)", feat_idx)
             continue
 
