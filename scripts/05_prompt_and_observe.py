@@ -165,9 +165,10 @@ def collect_top_features(
 
     acts = cache[hook_point]  # [1, seq_len, d_model]
 
-    # Mean-pooled activations across all positions
-    mean_acts = acts[0].mean(dim=0).float().unsqueeze(0)  # [1, d_model]
-    mean_feat_acts = sae.encode(mean_acts).squeeze(0)  # [d_sae]
+    # Encode each token position through the SAE, then mean-pool in feature space.
+    # The SAE encoder is nonlinear (top-k), so encode(mean(x)) != mean(encode(x)).
+    all_feat_acts = sae.encode(acts[0].float())  # [seq_len, d_sae]
+    mean_feat_acts = all_feat_acts.mean(dim=0)  # [d_sae]
 
     top_values, top_indices = torch.topk(mean_feat_acts, k=top_k)
     mean_features = [

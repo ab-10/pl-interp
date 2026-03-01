@@ -142,13 +142,12 @@ def collect_activations(
                     tokens, names_filter=hook_point
                 )
 
-            # Extract last-token activations
+            # Encode all token positions through the SAE and mean-pool
+            # in feature space.  Using only the last token discards
+            # activations from all other positions.
             acts = cache[hook_point]  # [1, seq_len, d_model]
-            last_token_acts = acts[0, -1, :]  # [d_model]
-
-            # Encode with SAE (requires float32)
-            feature_acts = sae.encode(last_token_acts.float().unsqueeze(0))  # [1, d_sae]
-            feature_acts = feature_acts.squeeze(0)  # [d_sae]
+            all_feat_acts = sae.encode(acts[0].float())  # [seq_len, d_sae]
+            feature_acts = all_feat_acts.mean(dim=0)  # [d_sae]
 
             # Get top-K features by activation value
             top_values, top_indices = torch.topk(feature_acts, k=top_k)
