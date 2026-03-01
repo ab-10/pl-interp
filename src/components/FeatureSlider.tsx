@@ -1,7 +1,9 @@
 "use client";
 
+import { ReactNode } from "react";
+
 interface FeatureSliderProps {
-  label: string;
+  label: ReactNode;
   value: number;
   onChange: (value: number) => void;
 }

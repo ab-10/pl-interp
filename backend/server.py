@@ -48,11 +48,8 @@ MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "200"))
 # ---------------------------------------------------------------------------
 
 FEATURE_REGISTRY: dict[str, str] = {
-    "13176": "Type annotations",
-    "9742": "Error handling",
-    "16290": "Recursive patterns",
-    "9344": "Verbose comments & documentation",
-    "16149": "Functional style (map/filter/lambda)",
+    "13176": "Typing",
+    "16290": "Recursion",
 }
 
 # ---------------------------------------------------------------------------

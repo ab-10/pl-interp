@@ -2,11 +2,8 @@ import { test, expect } from "@playwright/test";
 
 /** Mock /features response — flat dict of feature labels. */
 const MOCK_FEATURES = {
-  "13176": "Type annotations",
-  "9742": "Error handling",
-  "16290": "Recursive patterns",
-  "9344": "Verbose comments & documentation",
-  "16149": "Functional style (map/filter/lambda)",
+  "13176": "Typing",
+  "16290": "Recursion",
 };
 
 /** Mock /info response. */
@@ -67,52 +64,65 @@ test.describe("Feature Steering App", () => {
     await expect(page.getByText("SAE: layer_18_sae_checkpoint.pt (layer 18)")).toBeVisible();
   });
 
-  test("features load as flat list", async ({ page }) => {
+  test("features load as toggle buttons", async ({ page }) => {
     await mockBackend(page);
     await page.goto("/");
 
-    // Feature labels
+    // Feature toggle buttons
     await expect(
-      page.getByText("Type annotations")
+      page.getByRole("button", { name: "Typing" })
     ).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Error handling")).toBeVisible();
-    await expect(page.getByText("Recursive patterns")).toBeVisible();
-    await expect(page.getByText("Verbose comments & documentation")).toBeVisible();
-    await expect(page.getByText("Functional style (map/filter/lambda)")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Recursion" })).toBeVisible();
 
-    // Temperature slider + 5 feature sliders = 6 range inputs
+    // No feature slider visible initially (only temperature slider)
     const sliders = page.locator('input[type="range"]');
-    await expect(sliders).toHaveCount(6);
+    await expect(sliders).toHaveCount(1);
   });
 
-  test("feature sliders default to 0 and can be adjusted", async ({
+  test("toggling a feature shows slider at default strength 3", async ({
     page,
   }) => {
     await mockBackend(page);
     await page.goto("/");
-    await expect(page.getByText("Type annotations")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "Typing" })).toBeVisible({ timeout: 5000 });
 
-    // Feature sliders (skip the temperature slider which is first)
-    const featureSliders = page.locator(
-      'input[type="range"][min="-10"][max="10"]'
-    );
-    const count = await featureSliders.count();
-    expect(count).toBe(5);
+    // Click Typing toggle
+    await page.getByRole("button", { name: "Typing" }).click();
 
-    for (let i = 0; i < count; i++) {
-      await expect(featureSliders.nth(i)).toHaveValue("0");
-    }
+    // Slider appears with default value of 3
+    const featureSlider = page.locator('input[type="range"][min="-10"][max="10"]');
+    await expect(featureSlider).toHaveCount(1);
+    await expect(featureSlider).toHaveValue("3");
+    await expect(page.getByText("+3.0")).toBeVisible();
 
-    // Adjust first feature slider
-    await featureSliders.first().fill("5");
-    await expect(featureSliders.first()).toHaveValue("5");
+    // Adjust slider
+    await featureSlider.fill("5");
+    await expect(featureSlider).toHaveValue("5");
     await expect(page.getByText("+5.0")).toBeVisible();
+  });
+
+  test("features are mutually exclusive", async ({ page }) => {
+    await mockBackend(page);
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Typing" })).toBeVisible({ timeout: 5000 });
+
+    // Activate Typing
+    await page.getByRole("button", { name: "Typing" }).click();
+    const featureSliders = page.locator('input[type="range"][min="-10"][max="10"]');
+    await expect(featureSliders).toHaveCount(1);
+
+    // Switch to Recursion — replaces the slider
+    await page.getByRole("button", { name: "Recursion" }).click();
+    await expect(featureSliders).toHaveCount(1);
+
+    // Only one slider present
+    await expect(featureSliders).toHaveCount(1);
   });
 
   test("generate produces diff output", async ({ page }) => {
     await mockBackend(page);
     await page.goto("/");
-    await expect(page.getByText("Type annotations")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "Typing" })).toBeVisible({ timeout: 5000 });
 
     // Empty state shown before generating
     await expect(
@@ -127,39 +137,37 @@ test.describe("Feature Steering App", () => {
     await expect(page.locator("pre")).toBeVisible();
   });
 
-  test("custom feature input works without layer selector", async ({ page }) => {
+  test("custom feature input appears inline", async ({ page }) => {
     await mockBackend(page);
     await page.goto("/");
-    await expect(page.getByText("Custom Features")).toBeVisible({
-      timeout: 5000,
-    });
+    await expect(page.getByRole("button", { name: "Typing" })).toBeVisible({ timeout: 5000 });
 
-    // No layer dropdown
-    const selects = page.locator("select");
-    await expect(selects).toHaveCount(0);
-
-    // Feature ID input
-    const featureInput = page.locator('input[placeholder="e.g. 1234"]');
+    // Feature ID input alongside existing features
+    const featureInput = page.locator('input[placeholder="Feature ID"]');
     await expect(featureInput).toBeVisible();
+
+    // Add button present
+    await expect(page.getByRole("button", { name: "Add" })).toBeVisible();
   });
 
-  test("can add and remove custom features", async ({ page }) => {
+  test("can add and remove custom features as toggle buttons", async ({ page }) => {
     await mockBackend(page);
     await page.goto("/");
-    await expect(page.getByText("Custom Features")).toBeVisible({
-      timeout: 5000,
-    });
+    await expect(page.getByRole("button", { name: "Typing" })).toBeVisible({ timeout: 5000 });
 
     // Add a custom feature
-    await page.locator('input[placeholder="e.g. 1234"]').fill("42");
+    await page.locator('input[placeholder="Feature ID"]').fill("42");
     await page.getByRole("button", { name: "Add" }).click();
 
-    // Custom feature slider appears
-    await expect(page.getByText("#42")).toBeVisible();
+    // Custom feature appears as a toggle button and is auto-activated with slider
+    await expect(page.getByRole("button", { name: /Feature #42/ })).toBeVisible();
+    const featureSlider = page.locator('input[type="range"][min="-10"][max="10"]');
+    await expect(featureSlider).toHaveCount(1);
+    await expect(featureSlider).toHaveValue("3");
 
     // Remove it
     await page.getByTitle("Remove").click();
-    await expect(page.getByText("#42")).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /Feature #42/ })).not.toBeVisible();
   });
 
   test("error banner shows when backend is unreachable", async ({ page }) => {
@@ -193,7 +201,7 @@ test.describe("Feature Steering App", () => {
     await page.goto("/");
 
     await expect(
-      page.getByText("No labeled features yet")
+      page.getByText("No features available")
     ).toBeVisible({ timeout: 5000 });
   });
 });
