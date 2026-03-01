@@ -1,0 +1,532 @@
+{
+  "type_annotations": {
+    "18": [
+      {
+        "feature_idx": 13176,
+        "diff_score": 1.4026739597320557,
+        "target_freq": 0.41159647703170776,
+        "target_act": 3.410160779953003,
+        "control_freq": 0.0013333333190530539,
+        "control_act": 0.7021152973175049,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1499.3211669921875
+      },
+      {
+        "feature_idx": 10100,
+        "diff_score": 0.6375557780265808,
+        "target_freq": 0.16411817073822021,
+        "target_act": 3.8977177143096924,
+        "control_freq": 0.0022767295595258474,
+        "control_act": 0.9357768893241882,
+        "cross_prompt_freq": 1.0,
+        "specificity": 300.2487487792969
+      },
+      {
+        "feature_idx": 5690,
+        "diff_score": 0.44019556045532227,
+        "target_freq": 0.8118327856063843,
+        "target_act": 5.626635551452637,
+        "control_freq": 0.7669447660446167,
+        "control_act": 5.381993770599365,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.1066445112228394
+      },
+      {
+        "feature_idx": 541,
+        "diff_score": 0.4165189266204834,
+        "target_freq": 0.08404906094074249,
+        "target_act": 5.01601505279541,
+        "control_freq": 0.006000000052154064,
+        "control_act": 0.8454004526138306,
+        "cross_prompt_freq": 1.0,
+        "specificity": 83.11456298828125
+      },
+      {
+        "feature_idx": 11707,
+        "diff_score": 0.3849466145038605,
+        "target_freq": 0.22874918580055237,
+        "target_act": 3.319899082183838,
+        "control_freq": 0.1434527486562729,
+        "control_act": 2.610459566116333,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.027956247329712
+      }
+    ],
+    "27": [
+      {
+        "feature_idx": 15092,
+        "diff_score": 0.6121371388435364,
+        "target_freq": 0.2581962049007416,
+        "target_act": 5.076163291931152,
+        "control_freq": 0.1936914473772049,
+        "control_act": 3.606297254562378,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.8763483762741089
+      },
+      {
+        "feature_idx": 6538,
+        "diff_score": 0.4351491630077362,
+        "target_freq": 0.14880713820457458,
+        "target_act": 2.928180456161499,
+        "control_freq": 0.0013333333190530539,
+        "control_act": 0.4387505054473877,
+        "cross_prompt_freq": 1.0,
+        "specificity": 744.8311157226562
+      },
+      {
+        "feature_idx": 9865,
+        "diff_score": 0.43112820386886597,
+        "target_freq": 0.2980312407016754,
+        "target_act": 4.021915435791016,
+        "control_freq": 0.24305281043052673,
+        "control_act": 3.1578660011291504,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.5617098808288574
+      },
+      {
+        "feature_idx": 4963,
+        "diff_score": 0.40684354305267334,
+        "target_freq": 0.13140913844108582,
+        "target_act": 3.2515358924865723,
+        "control_freq": 0.01188679225742817,
+        "control_act": 1.7193870544433594,
+        "cross_prompt_freq": 1.0,
+        "specificity": 20.90622329711914
+      },
+      {
+        "feature_idx": 1139,
+        "diff_score": 0.4063838720321655,
+        "target_freq": 0.11805351078510284,
+        "target_act": 6.9663262367248535,
+        "control_freq": 0.0828227624297142,
+        "control_act": 5.0229597091674805,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.9768481254577637
+      }
+    ]
+  },
+  "error_handling": {
+    "18": [
+      {
+        "feature_idx": 9742,
+        "diff_score": 1.0237586498260498,
+        "target_freq": 0.4891851842403412,
+        "target_act": 6.2289299964904785,
+        "control_freq": 0.3757099211215973,
+        "control_act": 5.385382652282715,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.5059741735458374
+      },
+      {
+        "feature_idx": 15112,
+        "diff_score": 0.7271061539649963,
+        "target_freq": 0.1688518524169922,
+        "target_act": 6.374167442321777,
+        "control_freq": 0.07366341352462769,
+        "control_act": 4.740261554718018,
+        "cross_prompt_freq": 1.0,
+        "specificity": 3.0823018550872803
+      },
+      {
+        "feature_idx": 853,
+        "diff_score": 0.6227790117263794,
+        "target_freq": 0.35737037658691406,
+        "target_act": 4.356240749359131,
+        "control_freq": 0.24636900424957275,
+        "control_act": 3.791111707687378,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.6667780876159668
+      },
+      {
+        "feature_idx": 15741,
+        "diff_score": 0.586206316947937,
+        "target_freq": 0.15914815664291382,
+        "target_act": 5.511193752288818,
+        "control_freq": 0.08284391462802887,
+        "control_act": 3.5113022327423096,
+        "cross_prompt_freq": 1.0,
+        "specificity": 3.015216588973999
+      },
+      {
+        "feature_idx": 14708,
+        "diff_score": 0.42897579073905945,
+        "target_freq": 0.22292593121528625,
+        "target_act": 3.91013765335083,
+        "control_freq": 0.1461287885904312,
+        "control_act": 3.029487133026123,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.9690091609954834
+      }
+    ],
+    "27": [
+      {
+        "feature_idx": 10821,
+        "diff_score": 0.7026430368423462,
+        "target_freq": 0.3601852059364319,
+        "target_act": 4.868466377258301,
+        "control_freq": 0.22177906334400177,
+        "control_act": 4.738529205322266,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.6686066389083862
+      },
+      {
+        "feature_idx": 9958,
+        "diff_score": 0.4311860501766205,
+        "target_freq": 0.18585185706615448,
+        "target_act": 4.6852335929870605,
+        "control_freq": 0.11753859370946884,
+        "control_act": 3.739821195602417,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.9809194803237915
+      },
+      {
+        "feature_idx": 10731,
+        "diff_score": 0.40936338901519775,
+        "target_freq": 0.24762961268424988,
+        "target_act": 4.5792555809021,
+        "control_freq": 0.18429973721504211,
+        "control_act": 3.9316165447235107,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.5649540424346924
+      },
+      {
+        "feature_idx": 3490,
+        "diff_score": 0.40767425298690796,
+        "target_freq": 0.13944444060325623,
+        "target_act": 5.372167587280273,
+        "control_freq": 0.07325371354818344,
+        "control_act": 4.661124229431152,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.1939687728881836
+      },
+      {
+        "feature_idx": 11794,
+        "diff_score": 0.3856472671031952,
+        "target_freq": 0.10107407718896866,
+        "target_act": 7.216660976409912,
+        "control_freq": 0.06088900566101074,
+        "control_act": 5.645847797393799,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.1218175888061523
+      }
+    ]
+  },
+  "recursion": {
+    "18": [
+      {
+        "feature_idx": 16290,
+        "diff_score": 1.6094605922698975,
+        "target_freq": 0.6940999627113342,
+        "target_act": 6.575870513916016,
+        "control_freq": 0.5139521360397339,
+        "control_act": 5.749272346496582,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.5446841716766357
+      },
+      {
+        "feature_idx": 5690,
+        "diff_score": 0.9322056770324707,
+        "target_freq": 0.7814529538154602,
+        "target_act": 4.958512783050537,
+        "control_freq": 0.6713907122612,
+        "control_act": 4.382900714874268,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.316792368888855
+      },
+      {
+        "feature_idx": 5069,
+        "diff_score": 0.7040467262268066,
+        "target_freq": 0.54185551404953,
+        "target_act": 10.56532096862793,
+        "control_freq": 0.5125741362571716,
+        "control_act": 9.79532527923584,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.1402251720428467
+      },
+      {
+        "feature_idx": 12180,
+        "diff_score": 0.6313146948814392,
+        "target_freq": 0.28910407423973083,
+        "target_act": 3.2778687477111816,
+        "control_freq": 0.12327910959720612,
+        "control_act": 2.565969944000244,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.995743989944458
+      },
+      {
+        "feature_idx": 4537,
+        "diff_score": 0.5700356960296631,
+        "target_freq": 0.2795271873474121,
+        "target_act": 3.095148801803589,
+        "control_freq": 0.1300000101327896,
+        "control_act": 2.270327091217041,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.9313912391662598
+      }
+    ],
+    "27": [
+      {
+        "feature_idx": 10693,
+        "diff_score": 1.2077879905700684,
+        "target_freq": 0.6110197305679321,
+        "target_act": 3.9429821968078613,
+        "control_freq": 0.3695693910121918,
+        "control_act": 3.250951051712036,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.0052735805511475
+      },
+      {
+        "feature_idx": 16218,
+        "diff_score": 0.9891002178192139,
+        "target_freq": 0.5185452103614807,
+        "target_act": 7.142918586730957,
+        "control_freq": 0.4336937963962555,
+        "control_act": 6.2597761154174805,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.3643327951431274
+      },
+      {
+        "feature_idx": 1777,
+        "diff_score": 0.9558224678039551,
+        "target_freq": 0.8367549777030945,
+        "target_act": 8.367037773132324,
+        "control_freq": 0.7656682729721069,
+        "control_act": 7.895505428314209,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.1581090688705444
+      },
+      {
+        "feature_idx": 1913,
+        "diff_score": 0.7134170532226562,
+        "target_freq": 0.9542760848999023,
+        "target_act": 10.198527336120605,
+        "control_freq": 0.9204626083374023,
+        "control_act": 9.798110008239746,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.0791033506393433
+      },
+      {
+        "feature_idx": 6006,
+        "diff_score": 0.6077501773834229,
+        "target_freq": 0.8947399258613586,
+        "target_act": 4.827505111694336,
+        "control_freq": 0.8125518560409546,
+        "control_act": 4.567845821380615,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.1637428998947144
+      }
+    ]
+  },
+  "verbose_comments": {
+    "18": [
+      {
+        "feature_idx": 914,
+        "diff_score": 1.3150248527526855,
+        "target_freq": 0.4233333468437195,
+        "target_act": 4.932888031005859,
+        "control_freq": 0.20019540190696716,
+        "control_act": 3.8623814582824707,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.700688123703003
+      },
+      {
+        "feature_idx": 6294,
+        "diff_score": 1.3144643306732178,
+        "target_freq": 0.42600002884864807,
+        "target_act": 5.586104393005371,
+        "control_freq": 0.24954712390899658,
+        "control_act": 4.268597602844238,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.2339882850646973
+      },
+      {
+        "feature_idx": 9344,
+        "diff_score": 0.8873921632766724,
+        "target_freq": 0.22933335602283478,
+        "target_act": 4.703925609588623,
+        "control_freq": 0.07098643481731415,
+        "control_act": 2.695936441421509,
+        "cross_prompt_freq": 1.0,
+        "specificity": 5.636929988861084
+      },
+      {
+        "feature_idx": 10923,
+        "diff_score": 0.8730176091194153,
+        "target_freq": 0.3160000443458557,
+        "target_act": 3.6682021617889404,
+        "control_freq": 0.13281914591789246,
+        "control_act": 2.1543161869049072,
+        "cross_prompt_freq": 1.0,
+        "specificity": 4.051074981689453
+      },
+      {
+        "feature_idx": 6247,
+        "diff_score": 0.5526691675186157,
+        "target_freq": 0.2853333353996277,
+        "target_act": 4.813179016113281,
+        "control_freq": 0.1967519223690033,
+        "control_act": 4.171197891235352,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.6734191179275513
+      }
+    ],
+    "27": [
+      {
+        "feature_idx": 15092,
+        "diff_score": 1.8549082279205322,
+        "target_freq": 0.48133334517478943,
+        "target_act": 6.177456855773926,
+        "control_freq": 0.273792564868927,
+        "control_act": 4.085238456726074,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.6583774089813232
+      },
+      {
+        "feature_idx": 761,
+        "diff_score": 0.8749647736549377,
+        "target_freq": 0.3033333420753479,
+        "target_act": 4.999821662902832,
+        "control_freq": 0.15456923842430115,
+        "control_act": 4.151200294494629,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.363621473312378
+      },
+      {
+        "feature_idx": 15358,
+        "diff_score": 0.4840337038040161,
+        "target_freq": 0.42466670274734497,
+        "target_act": 4.543145179748535,
+        "control_freq": 0.30632394552230835,
+        "control_act": 4.718171119689941,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.3349045515060425
+      },
+      {
+        "feature_idx": 5416,
+        "diff_score": 0.4733932614326477,
+        "target_freq": 0.08800000697374344,
+        "target_act": 5.938747406005859,
+        "control_freq": 0.01600000075995922,
+        "control_act": 3.076036214828491,
+        "cross_prompt_freq": 1.0,
+        "specificity": 10.618569374084473
+      },
+      {
+        "feature_idx": 7715,
+        "diff_score": 0.444230854511261,
+        "target_freq": 0.19333334267139435,
+        "target_act": 5.618203163146973,
+        "control_freq": 0.13041377067565918,
+        "control_act": 4.922449588775635,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.691996693611145
+      }
+    ]
+  },
+  "functional_style": {
+    "18": [
+      {
+        "feature_idx": 16149,
+        "diff_score": 2.1269519329071045,
+        "target_freq": 0.5059999823570251,
+        "target_act": 4.601830005645752,
+        "control_freq": 0.09975583851337433,
+        "control_act": 2.02067494392395,
+        "cross_prompt_freq": 1.0,
+        "specificity": 11.55171012878418
+      },
+      {
+        "feature_idx": 8575,
+        "diff_score": 1.2268518209457397,
+        "target_freq": 0.28600001335144043,
+        "target_act": 7.495596885681152,
+        "control_freq": 0.15567637979984283,
+        "control_act": 5.889712333679199,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.338059186935425
+      },
+      {
+        "feature_idx": 5766,
+        "diff_score": 0.8197383880615234,
+        "target_freq": 0.9933333396911621,
+        "target_act": 12.218942642211914,
+        "control_freq": 0.976326584815979,
+        "control_act": 11.592170715332031,
+        "cross_prompt_freq": 1.0,
+        "specificity": 1.0724295377731323
+      },
+      {
+        "feature_idx": 11707,
+        "diff_score": 0.7006611824035645,
+        "target_freq": 0.2666666805744171,
+        "target_act": 3.7859840393066406,
+        "control_freq": 0.12199696153402328,
+        "control_act": 2.532313823699951,
+        "cross_prompt_freq": 1.0,
+        "specificity": 3.267991781234741
+      },
+      {
+        "feature_idx": 12776,
+        "diff_score": 0.6922125220298767,
+        "target_freq": 0.09400000423192978,
+        "target_act": 8.97122573852539,
+        "control_freq": 0.03536539897322655,
+        "control_act": 4.272049427032471,
+        "cross_prompt_freq": 1.0,
+        "specificity": 5.5816779136657715
+      }
+    ],
+    "27": [
+      {
+        "feature_idx": 480,
+        "diff_score": 1.8768614530563354,
+        "target_freq": 0.43400001525878906,
+        "target_act": 4.6375532150268555,
+        "control_freq": 0.06648971140384674,
+        "control_act": 2.042973518371582,
+        "cross_prompt_freq": 1.0,
+        "specificity": 14.817038536071777
+      },
+      {
+        "feature_idx": 8557,
+        "diff_score": 1.0959199666976929,
+        "target_freq": 0.36800000071525574,
+        "target_act": 4.004484176635742,
+        "control_freq": 0.1136222630739212,
+        "control_act": 3.3244388103485107,
+        "cross_prompt_freq": 1.0,
+        "specificity": 3.901329517364502
+      },
+      {
+        "feature_idx": 6837,
+        "diff_score": 0.7656097412109375,
+        "target_freq": 0.14866666495800018,
+        "target_act": 7.238268852233887,
+        "control_freq": 0.08893037587404251,
+        "control_act": 3.491265058517456,
+        "cross_prompt_freq": 1.0,
+        "specificity": 3.4658944606781006
+      },
+      {
+        "feature_idx": 3972,
+        "diff_score": 0.6919558048248291,
+        "target_freq": 0.18466666340827942,
+        "target_act": 4.007187366485596,
+        "control_freq": 0.026035863906145096,
+        "control_act": 1.8450758457183838,
+        "cross_prompt_freq": 1.0,
+        "specificity": 15.404295921325684
+      },
+      {
+        "feature_idx": 11842,
+        "diff_score": 0.6706835031509399,
+        "target_freq": 0.19733333587646484,
+        "target_act": 5.1368207931518555,
+        "control_freq": 0.09139260649681091,
+        "control_act": 3.7528481483459473,
+        "cross_prompt_freq": 1.0,
+        "specificity": 2.955444812774658
+      }
+    ]
+  }
+}

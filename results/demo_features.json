@@ -1,0 +1,502 @@
+{
+  "features": [
+    {
+      "layer": 18,
+      "feature_idx": 13176,
+      "label": "Type annotations",
+      "property": "type_annotations",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.4026739597320557,
+      "specificity": 1499.3211669921875,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 10100,
+      "label": "Type annotations",
+      "property": "type_annotations",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.6375557780265808,
+      "specificity": 300.2487487792969,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 5690,
+      "label": "Type annotations",
+      "property": "type_annotations",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.44019556045532227,
+      "specificity": 1.1066445112228394,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 15092,
+      "label": "Type annotations",
+      "property": "type_annotations",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.6121371388435364,
+      "specificity": 1.8763483762741089,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 6538,
+      "label": "Type annotations",
+      "property": "type_annotations",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.4351491630077362,
+      "specificity": 744.8311157226562,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 9865,
+      "label": "Type annotations",
+      "property": "type_annotations",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.43112820386886597,
+      "specificity": 1.5617098808288574,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 9742,
+      "label": "Error handling",
+      "property": "error_handling",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.0237586498260498,
+      "specificity": 1.5059741735458374,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 15112,
+      "label": "Error handling",
+      "property": "error_handling",
+      "demo_strength": 5.0,
+      "neg_strength": -5.0,
+      "diff_score": 0.7271061539649963,
+      "specificity": 3.0823018550872803,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 853,
+      "label": "Error handling",
+      "property": "error_handling",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.6227790117263794,
+      "specificity": 1.6667780876159668,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 10821,
+      "label": "Error handling",
+      "property": "error_handling",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.7026430368423462,
+      "specificity": 1.6686066389083862,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 9958,
+      "label": "Error handling",
+      "property": "error_handling",
+      "demo_strength": 5.0,
+      "neg_strength": -5.0,
+      "diff_score": 0.4311860501766205,
+      "specificity": 1.9809194803237915,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 10731,
+      "label": "Error handling",
+      "property": "error_handling",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.40936338901519775,
+      "specificity": 1.5649540424346924,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 16290,
+      "label": "Recursive patterns",
+      "property": "recursion",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.6094605922698975,
+      "specificity": 1.5446841716766357,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 5690,
+      "label": "Recursive patterns",
+      "property": "recursion",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.9322056770324707,
+      "specificity": 1.316792368888855,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 5069,
+      "label": "Recursive patterns",
+      "property": "recursion",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.7040467262268066,
+      "specificity": 1.1402251720428467,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 10693,
+      "label": "Recursive patterns",
+      "property": "recursion",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.2077879905700684,
+      "specificity": 2.0052735805511475,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 16218,
+      "label": "Recursive patterns",
+      "property": "recursion",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.9891002178192139,
+      "specificity": 1.3643327951431274,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 1777,
+      "label": "Recursive patterns",
+      "property": "recursion",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.9558224678039551,
+      "specificity": 1.1581090688705444,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 914,
+      "label": "Verbose comments & documentation",
+      "property": "verbose_comments",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.3150248527526855,
+      "specificity": 2.700688123703003,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 6294,
+      "label": "Verbose comments & documentation",
+      "property": "verbose_comments",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.3144643306732178,
+      "specificity": 2.2339882850646973,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 9344,
+      "label": "Verbose comments & documentation",
+      "property": "verbose_comments",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.8873921632766724,
+      "specificity": 5.636929988861084,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 15092,
+      "label": "Verbose comments & documentation",
+      "property": "verbose_comments",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.8549082279205322,
+      "specificity": 2.6583774089813232,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 761,
+      "label": "Verbose comments & documentation",
+      "property": "verbose_comments",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.8749647736549377,
+      "specificity": 2.363621473312378,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 15358,
+      "label": "Verbose comments & documentation",
+      "property": "verbose_comments",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.4840337038040161,
+      "specificity": 1.3349045515060425,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 16149,
+      "label": "Functional style (map/filter/lambda)",
+      "property": "functional_style",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 2.1269519329071045,
+      "specificity": 11.55171012878418,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 8575,
+      "label": "Functional style (map/filter/lambda)",
+      "property": "functional_style",
+      "demo_strength": 5.0,
+      "neg_strength": -5.0,
+      "diff_score": 1.2268518209457397,
+      "specificity": 2.338059186935425,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 18,
+      "feature_idx": 5766,
+      "label": "Functional style (map/filter/lambda)",
+      "property": "functional_style",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 0.8197383880615234,
+      "specificity": 1.0724295377731323,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 480,
+      "label": "Functional style (map/filter/lambda)",
+      "property": "functional_style",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.8768614530563354,
+      "specificity": 14.817038536071777,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 8557,
+      "label": "Functional style (map/filter/lambda)",
+      "property": "functional_style",
+      "demo_strength": 3.0,
+      "neg_strength": -3.0,
+      "diff_score": 1.0959199666976929,
+      "specificity": 3.901329517364502,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    },
+    {
+      "layer": 27,
+      "feature_idx": 6837,
+      "label": "Functional style (map/filter/lambda)",
+      "property": "functional_style",
+      "demo_strength": 8.0,
+      "neg_strength": -8.0,
+      "diff_score": 0.7656097412109375,
+      "specificity": 3.4658944606781006,
+      "verified_on": [
+        "Write a Python function that merges two ",
+        "Implement a function that checks if a st",
+        "Write a function that counts word freque"
+      ]
+    }
+  ],
+  "demo_prompt": "Write a Python function that merges two sorted lists.",
+  "backup_prompts": [
+    "Implement a function that checks if a string is a palindrome.",
+    "Write a function that counts word frequencies in a string."
+  ],
+  "settings": {
+    "temperature": 0.3,
+    "max_new_tokens": 200,
+    "slider_range": [
+      -10,
+      10
+    ],
+    "slider_step": 0.5
+  },
+  "feature_labels_for_server": {
+    "18": {
+      "13176": "Type annotations",
+      "10100": "Type annotations",
+      "5690": "Recursive patterns",
+      "9742": "Error handling",
+      "15112": "Error handling",
+      "853": "Error handling",
+      "16290": "Recursive patterns",
+      "5069": "Recursive patterns",
+      "914": "Verbose comments & documentation",
+      "6294": "Verbose comments & documentation",
+      "9344": "Verbose comments & documentation",
+      "16149": "Functional style (map/filter/lambda)",
+      "8575": "Functional style (map/filter/lambda)",
+      "5766": "Functional style (map/filter/lambda)"
+    },
+    "27": {
+      "15092": "Verbose comments & documentation",
+      "6538": "Type annotations",
+      "9865": "Type annotations",
+      "10821": "Error handling",
+      "9958": "Error handling",
+      "10731": "Error handling",
+      "10693": "Recursive patterns",
+      "16218": "Recursive patterns",
+      "1777": "Recursive patterns",
+      "761": "Verbose comments & documentation",
+      "15358": "Verbose comments & documentation",
+      "480": "Functional style (map/filter/lambda)",
+      "8557": "Functional style (map/filter/lambda)",
+      "6837": "Functional style (map/filter/lambda)"
+    }
+  }
+}

@@ -1,0 +1,667 @@
+{
+  "sae_path": "/home/azureuser/checkpoints/code_sae_v1",
+  "profile": {
+    "d_sae": 32768,
+    "d_in": 4096,
+    "dead_features": 17125,
+    "alive_features": 15643,
+    "dead_fraction": 0.522613525390625,
+    "l0_mean": 102.06693830034925,
+    "l0_std": 117.0264720908079,
+    "l0_min": 23,
+    "l0_max": 777,
+    "decoder_norm_min": 0.9999998211860657,
+    "decoder_norm_max": 1.0000001192092896,
+    "decoder_norm_mean": 1.0
+  },
+  "contrastive_features": {
+    "Type annotations": {
+      "positive_category": "typed_python",
+      "negative_category": "untyped_python",
+      "top_features": [
+        {
+          "feature_id": 304,
+          "score": 0.09427770227193832,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.2175639271736145,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 31006,
+          "score": 0.06919805705547333,
+          "pos_freq": 0.6666666865348816,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.26828017830848694,
+          "neg_mean_act": 0.10859236121177673
+        },
+        {
+          "feature_id": 10022,
+          "score": 0.060116104781627655,
+          "pos_freq": 1.0,
+          "neg_freq": 0.6666666865348816,
+          "pos_mean_act": 0.5866335034370422,
+          "neg_mean_act": 0.4479040205478668
+        },
+        {
+          "feature_id": 4961,
+          "score": 0.05625394731760025,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.12981680035591125,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 22535,
+          "score": 0.05073387920856476,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.11707818508148193,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 10177,
+          "score": 0.042250856757164,
+          "pos_freq": 0.6666666865348816,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.22536100447177887,
+          "neg_mean_act": 0.40643611550331116
+        },
+        {
+          "feature_id": 32389,
+          "score": 0.03449510410428047,
+          "pos_freq": 0.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.14783614873886108
+        },
+        {
+          "feature_id": 32669,
+          "score": 0.03192867338657379,
+          "pos_freq": 0.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.1368371546268463
+        },
+        {
+          "feature_id": 8568,
+          "score": 0.025246309116482735,
+          "pos_freq": 0.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.10819845646619797
+        },
+        {
+          "feature_id": 7897,
+          "score": 0.023598121479153633,
+          "pos_freq": 0.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.10113479942083359
+        }
+      ],
+      "suppressing_features": [
+        {
+          "feature_id": 21060,
+          "score": -0.021101316437125206
+        },
+        {
+          "feature_id": 14745,
+          "score": -0.012576264329254627
+        },
+        {
+          "feature_id": 17862,
+          "score": -0.011844635009765625
+        },
+        {
+          "feature_id": 32642,
+          "score": -0.009276079945266247
+        },
+        {
+          "feature_id": 23706,
+          "score": -0.005215993616729975
+        }
+      ]
+    },
+    "Error handling": {
+      "positive_category": "error_handling",
+      "negative_category": "no_error_handling",
+      "top_features": [
+        {
+          "feature_id": 28883,
+          "score": 0.9559895992279053,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 1.0622106790542603
+        },
+        {
+          "feature_id": 32669,
+          "score": 0.9394961595535278,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 1.0438846349716187
+        },
+        {
+          "feature_id": 3305,
+          "score": 0.5414438247680664,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.6016042828559875
+        },
+        {
+          "feature_id": 9998,
+          "score": 0.5238537788391113,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.5820598006248474
+        },
+        {
+          "feature_id": 18760,
+          "score": 0.5052495002746582,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.561388373374939
+        },
+        {
+          "feature_id": 16396,
+          "score": 0.45704197883605957,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.5078244209289551
+        },
+        {
+          "feature_id": 9963,
+          "score": 0.27604207396507263,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.30671343207359314
+        },
+        {
+          "feature_id": 10335,
+          "score": 0.2642136216163635,
+          "pos_freq": 0.0,
+          "neg_freq": 0.6666666865348816,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.46625933051109314
+        },
+        {
+          "feature_id": 22208,
+          "score": 0.18728351593017578,
+          "pos_freq": 0.0,
+          "neg_freq": 0.6666666865348816,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.3305003345012665
+        },
+        {
+          "feature_id": 17198,
+          "score": 0.18679295480251312,
+          "pos_freq": 0.0,
+          "neg_freq": 0.6666666865348816,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.3296346366405487
+        }
+      ],
+      "suppressing_features": [
+        {
+          "feature_id": 14745,
+          "score": -0.06274748593568802
+        },
+        {
+          "feature_id": 17862,
+          "score": -0.02939961664378643
+        },
+        {
+          "feature_id": 15535,
+          "score": -0.015663987025618553
+        },
+        {
+          "feature_id": 10177,
+          "score": -0.004343016538769007
+        },
+        {
+          "feature_id": 10022,
+          "score": -0.003422379493713379
+        }
+      ]
+    },
+    "Functional style": {
+      "positive_category": "functional",
+      "negative_category": "imperative",
+      "top_features": [
+        {
+          "feature_id": 14745,
+          "score": 0.2010851502418518,
+          "pos_freq": 0.6666666865348816,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.2622849643230438,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 10177,
+          "score": 0.14552435278892517,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.10528204590082169,
+          "neg_mean_act": 0.36208975315093994
+        },
+        {
+          "feature_id": 21060,
+          "score": 0.12009339034557343,
+          "pos_freq": 1.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.32926690578460693,
+          "neg_mean_act": 0.17262335121631622
+        },
+        {
+          "feature_id": 28883,
+          "score": 0.06504636257886887,
+          "pos_freq": 0.6666666865348816,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.2797565758228302,
+          "neg_mean_act": 0.1296495944261551
+        },
+        {
+          "feature_id": 25533,
+          "score": 0.05095972493290901,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.11759936809539795,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 13065,
+          "score": 0.04474965110421181,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.10326842218637466,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 31436,
+          "score": 0.04188746586441994,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.09666338562965393,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 874,
+          "score": 0.02996166981756687,
+          "pos_freq": 0.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.12840715050697327
+        },
+        {
+          "feature_id": 23558,
+          "score": 0.027215244248509407,
+          "pos_freq": 0.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.11663675308227539
+        },
+        {
+          "feature_id": 29453,
+          "score": 0.02396172657608986,
+          "pos_freq": 0.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.102693110704422
+        }
+      ],
+      "suppressing_features": [
+        {
+          "feature_id": 17862,
+          "score": -0.016175925731658936
+        },
+        {
+          "feature_id": 16067,
+          "score": -0.0010162725811824203
+        },
+        {
+          "feature_id": 3,
+          "score": 0.0
+        },
+        {
+          "feature_id": 1,
+          "score": 0.0
+        },
+        {
+          "feature_id": 4,
+          "score": 0.0
+        }
+      ]
+    },
+    "Recursion": {
+      "positive_category": "recursive",
+      "negative_category": "iterative",
+      "top_features": [
+        {
+          "feature_id": 17862,
+          "score": 0.2887837886810303,
+          "pos_freq": 1.0,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.48882612586021423,
+          "neg_mean_act": 0.1121516302227974
+        },
+        {
+          "feature_id": 10177,
+          "score": 0.17295563220977783,
+          "pos_freq": 0.6666666865348816,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.22559428215026855,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 31006,
+          "score": 0.16244646906852722,
+          "pos_freq": 0.6666666865348816,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.2118866890668869,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 874,
+          "score": 0.09756837040185928,
+          "pos_freq": 0.0,
+          "neg_freq": 0.6666666865348816,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.1721794754266739
+        },
+        {
+          "feature_id": 6901,
+          "score": 0.07979007065296173,
+          "pos_freq": 0.6666666865348816,
+          "neg_freq": 0.3333333432674408,
+          "pos_mean_act": 0.2828696072101593,
+          "neg_mean_act": 0.0987386703491211
+        },
+        {
+          "feature_id": 40,
+          "score": 0.06366894394159317,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.1469283252954483,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 15773,
+          "score": 0.05511481687426567,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.127188041806221,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 21060,
+          "score": 0.05503259226679802,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.12699829041957855,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 5078,
+          "score": 0.045147042721509933,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.10418548434972763,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 14745,
+          "score": 0.040140002965927124,
+          "pos_freq": 0.3333333432674408,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0926307737827301,
+          "neg_mean_act": 0.0
+        }
+      ],
+      "suppressing_features": [
+        {
+          "feature_id": 2,
+          "score": -0.0002246715157525614
+        },
+        {
+          "feature_id": 0,
+          "score": 0.0
+        },
+        {
+          "feature_id": 3,
+          "score": 0.0
+        },
+        {
+          "feature_id": 1,
+          "score": 0.0
+        },
+        {
+          "feature_id": 4,
+          "score": 0.0
+        }
+      ]
+    },
+    "TypeScript types": {
+      "positive_category": "typescript",
+      "negative_category": "javascript",
+      "top_features": [
+        {
+          "feature_id": 304,
+          "score": 0.7426484227180481,
+          "pos_freq": 1.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.6751348972320557,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 14745,
+          "score": 0.1150381937623024,
+          "pos_freq": 0.5,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.16651949286460876,
+          "neg_mean_act": 0.45411497354507446
+        },
+        {
+          "feature_id": 32669,
+          "score": 0.08033805340528488,
+          "pos_freq": 0.0,
+          "neg_freq": 0.5,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.2008451372385025
+        },
+        {
+          "feature_id": 874,
+          "score": 0.07352236658334732,
+          "pos_freq": 0.0,
+          "neg_freq": 0.5,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.183805912733078
+        },
+        {
+          "feature_id": 29729,
+          "score": 0.06568162888288498,
+          "pos_freq": 0.0,
+          "neg_freq": 0.5,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.16420407593250275
+        },
+        {
+          "feature_id": 2807,
+          "score": 0.06462176889181137,
+          "pos_freq": 0.0,
+          "neg_freq": 0.5,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.16155442595481873
+        },
+        {
+          "feature_id": 8568,
+          "score": 0.06384699791669846,
+          "pos_freq": 0.0,
+          "neg_freq": 0.5,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.15961748361587524
+        },
+        {
+          "feature_id": 7,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 3,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 8,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        }
+      ],
+      "suppressing_features": [
+        {
+          "feature_id": 807,
+          "score": -0.034031033515930176
+        },
+        {
+          "feature_id": 25314,
+          "score": -0.011034460738301277
+        },
+        {
+          "feature_id": 10177,
+          "score": -0.010767742991447449
+        },
+        {
+          "feature_id": 21060,
+          "score": -0.010522211901843548
+        },
+        {
+          "feature_id": 17862,
+          "score": -0.006207806058228016
+        }
+      ]
+    },
+    "Verbose comments": {
+      "positive_category": "verbose_comments",
+      "negative_category": "minimal_comments",
+      "top_features": [
+        {
+          "feature_id": 10177,
+          "score": 0.38853293657302856,
+          "pos_freq": 1.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.35321176052093506,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 4760,
+          "score": 0.2991279065608978,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.33236435055732727
+        },
+        {
+          "feature_id": 31006,
+          "score": 0.2418932169675827,
+          "pos_freq": 0.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.2687702476978302
+        },
+        {
+          "feature_id": 22408,
+          "score": 0.010216966271400452,
+          "pos_freq": 1.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.5065790414810181,
+          "neg_mean_act": 0.40440937876701355
+        },
+        {
+          "feature_id": 8479,
+          "score": 0.00927329994738102,
+          "pos_freq": 1.0,
+          "neg_freq": 1.0,
+          "pos_mean_act": 0.42137017846107483,
+          "neg_mean_act": 0.32863718271255493
+        },
+        {
+          "feature_id": 7,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 3,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 8,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 1,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        },
+        {
+          "feature_id": 4,
+          "score": 0.0,
+          "pos_freq": 0.0,
+          "neg_freq": 0.0,
+          "pos_mean_act": 0.0,
+          "neg_mean_act": 0.0
+        }
+      ],
+      "suppressing_features": [
+        {
+          "feature_id": 31323,
+          "score": -0.04543329030275345
+        },
+        {
+          "feature_id": 26584,
+          "score": -0.01133083738386631
+        },
+        {
+          "feature_id": 17862,
+          "score": -0.005922559183090925
+        },
+        {
+          "feature_id": 3,
+          "score": 0.0
+        },
+        {
+          "feature_id": 1,
+          "score": 0.0
+        }
+      ]
+    }
+  }
+}
