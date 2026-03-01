@@ -39,7 +39,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from experiments.sae.model import TopKSAE
 from experiments.steering.hook import make_steering_hook
-from experiments.steering.analyze_steering import compute_all_densities
+# Inline density computation to avoid deep import chain from analyze_steering
+_DENSITY_PATTERNS: dict[str, list[str]] = {
+    "type_annotations": [
+        r":\s*(?:int|float|str|bool|list|dict|tuple|set|None|Any|Optional|Union|Callable)\b",
+        r"->\s*(?:int|float|str|bool|list|dict|tuple|set|None|Any|Optional|Union)\b",
+        r":\s*(?:List|Dict|Tuple|Set)\[",
+    ],
+    "error_handling": [r"\btry\b", r"\bexcept\b", r"\bcatch\b", r"\bfinally\b", r"\braise\b", r"\bthrow\b"],
+    "control_flow": [r"\bif\b", r"\belif\b", r"\belse\b", r"\bfor\b", r"\bwhile\b", r"\bbreak\b", r"\bcontinue\b", r"\bswitch\b", r"\bmatch\b"],
+    "decomposition": [r"\bdef\s+\w+", r"\bclass\s+\w+", r"\bfunction\s+\w+", r"\bimport\b", r"\bfrom\s+\w+\s+import\b"],
+    "functional_style": [r"\bmap\s*\(", r"\bfilter\s*\(", r"\breduce\s*\(", r"\blambda\b", r"\[.+\bfor\b.+\bin\b.+\]"],
+    "recursion": [r"\breturn\s+\w+\s*\(", r"\brecurs"],
+    "verbose_documentation": [r'"""', r"'''", r"#\s+\S", r"//\s+\S", r"/\*", r"\bArgs:\b", r"\bReturns:\b"],
+}
+
+def compute_all_densities(text: str) -> dict[str, float]:
+    """Compute density for every known property."""
+    result = {}
+    lines = text.strip().split("\n")
+    total_lines = max(len(lines), 1)
+    for prop, patterns in _DENSITY_PATTERNS.items():
+        total_matches = sum(len(re.findall(p, text, re.MULTILINE | re.IGNORECASE)) for p in patterns)
+        result[prop] = total_matches / total_lines
+    return result
 
 # ---------------------------------------------------------------------------
 # Config from environment
