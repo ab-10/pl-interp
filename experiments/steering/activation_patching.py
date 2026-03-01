@@ -86,10 +86,11 @@ def make_clamp_hook(direction: torch.Tensor, target: float):
         hidden_states = output[0] if is_tuple else output
 
         if hidden_states.shape[1] == 1:  # decode step only
-            # Current projection: scalar per batch element
-            proj = torch.sum(hidden_states * direction, dim=-1, keepdim=True)  # (B, 1, 1)
-            delta = target - proj  # (B, 1, 1)
-            hidden_states = hidden_states + delta * direction.to(hidden_states.dtype)
+            # Cast direction to match hidden_states dtype (avoid float32 promotion)
+            d = direction.to(hidden_states.dtype)
+            proj = torch.sum(hidden_states * d, dim=-1, keepdim=True)  # (B, 1, 1)
+            delta = target - proj  # (B, 1, 1), stays in hidden dtype
+            hidden_states = hidden_states + delta * d
             if is_tuple:
                 return (hidden_states,) + output[1:]
             return hidden_states
