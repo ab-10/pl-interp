@@ -6,10 +6,11 @@ import { TokenActivation } from "@/lib/types";
 interface TokenHeatmapProps {
   tokens: TokenActivation[];
   activeFeatureIds: number[];
+  prompt?: string;
 }
 
 /** Render code tokens with background color intensity proportional to SAE activation. */
-export default function TokenHeatmap({ tokens, activeFeatureIds }: TokenHeatmapProps) {
+export default function TokenHeatmap({ tokens, activeFeatureIds, prompt }: TokenHeatmapProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   if (tokens.length === 0) return null;
@@ -29,6 +30,7 @@ export default function TokenHeatmap({ tokens, activeFeatureIds }: TokenHeatmapP
     <div className="relative">
       <pre className="overflow-auto rounded-lg border border-zinc-200 bg-white p-4 text-sm leading-relaxed">
         <code>
+          {prompt && <span className="text-zinc-400">{prompt}</span>}
           {tokens.map((tok, i) => {
             // Sum activation across active features
             let totalAct = 0;

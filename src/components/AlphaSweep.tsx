@@ -9,6 +9,7 @@ interface AlphaSweepProps {
   baselineText: string;
   selectedIndex: number;
   onIndexChange: (index: number) => void;
+  prompt?: string;
 }
 
 /** Discrete scrubber showing diff vs baseline at different steering alpha levels. */
@@ -17,6 +18,7 @@ export default function AlphaSweep({
   baselineText,
   selectedIndex,
   onIndexChange,
+  prompt,
 }: AlphaSweepProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -37,7 +39,8 @@ export default function AlphaSweep({
   if (results.length === 0) return null;
 
   const current = results[selectedIndex];
-  const changes = diffLines(baselineText, current?.text ?? "");
+  const prefix = prompt ?? "";
+  const changes = diffLines(baselineText, prefix + (current?.text ?? ""));
 
   return (
     <div className="flex flex-col gap-3">

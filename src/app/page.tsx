@@ -298,33 +298,45 @@ export default function Home() {
 
           {/* Tab content */}
           <div className="flex-1 overflow-y-auto p-5">
+            {/* Loading state — centered in main area */}
+            {loading && (
+              <div className="flex h-full items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-200 border-t-blue-500" />
+                  <p className="text-xs text-zinc-400">Generating...</p>
+                </div>
+              </div>
+            )}
+
             {/* Code Tab */}
-            {activeTab === "code" && (
+            {activeTab === "code" && !loading && (
               <div className="flex flex-col gap-4">
                 {showSweep && result?.sweep_results && result.sweep_results.length > 0 ? (
                   <AlphaSweep
                     results={result.sweep_results}
-                    baselineText={result.baseline}
+                    baselineText={prompt + result.baseline}
                     selectedIndex={selectedSweepIndex}
                     onIndexChange={setSelectedSweepIndex}
+                    prompt={prompt}
                   />
                 ) : showHeatmap && result?.token_activations && result.token_activations.length > 0 ? (
                   <TokenHeatmap
                     tokens={result.token_activations}
                     activeFeatureIds={activeFeatureIds}
+                    prompt={prompt}
                   />
                 ) : (
                   <ResultsPanel
-                    baseline={result?.baseline ?? null}
-                    steered={result?.steered ?? null}
-                    loading={loading}
+                    baseline={result ? prompt + result.baseline : null}
+                    steered={result ? prompt + result.steered : null}
+                    loading={false}
                   />
                 )}
               </div>
             )}
 
             {/* Analysis Tab */}
-            {activeTab === "analysis" && (
+            {activeTab === "analysis" && !loading && (
               <div className="flex flex-col gap-6">
                 {result?.baseline_density && result?.steered_density ? (
                   <div className="rounded-lg border border-zinc-200 bg-white p-5">
@@ -350,8 +362,8 @@ export default function Home() {
                       Code Diff
                     </h3>
                     <ResultsPanel
-                      baseline={result.baseline}
-                      steered={result.steered}
+                      baseline={prompt + result.baseline}
+                      steered={prompt + result.steered}
                       loading={false}
                     />
                   </div>
