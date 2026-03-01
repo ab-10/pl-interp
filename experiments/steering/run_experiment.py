@@ -401,8 +401,8 @@ def main() -> int:
         help="Comma-separated alpha values (default: '3.0,-3.0')",
     )
     parser.add_argument(
-        "--steer-layer", type=int, default=16,
-        help="Decoder layer index for steering hook (default: 16)",
+        "--steer-layer", type=int, default=config.CAPTURE_LAYER,
+        help=f"Decoder layer index for steering hook (default: {config.CAPTURE_LAYER})",
     )
     parser.add_argument(
         "--shard", type=int, required=True,
