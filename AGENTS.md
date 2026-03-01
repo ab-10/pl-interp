@@ -1,3 +1,7 @@
+# Testing
+
+- When making changes involving frontend, always verify them using playwright before telling the user you're done!
+
 # Environment
 
 You are running inside a Docker container.

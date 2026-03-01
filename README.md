@@ -57,6 +57,13 @@ VM access:
 
 **Note:** Tight deadline — if layer 16 is too sparse on code features, there is no time for custom SAE training. Pivot options should be evaluated early.
 
+**Implementation discrepancies vs `FEATURE_DISCOVERY_v2.md`:**
+- Scripts use **single-GPU sequential** processing (plan), not `torchrun` multi-GPU (v2). VM has 2 H100s, not 95.
+- Uses **HumanEval via MultiPL-E** (8 languages, ~1,280 prompts) instead of HumanEval-only.
+- Steering verification uses **side-by-side print output**, not Claude Opus LLM-as-judge. No `anthropic` dependency.
+- No `00_explore_sae.py`, `00b_inspect_contrast.py`, or `config.py` — added in v2 but not in approved plan.
+- Differential score formula: `code_freq * code_mean - noncode_freq * noncode_mean` (additive), not the ratio formula from v2.
+
 ## Feature Steering CLI
 
 **Status:** not started
