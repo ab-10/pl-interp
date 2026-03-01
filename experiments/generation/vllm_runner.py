@@ -11,7 +11,7 @@ class VLLMRunner:
     def __init__(
         self,
         model_id: str = config.MODEL_ID,
-        gpu_memory_utilization: float = 0.9,
+        gpu_memory_utilization: float = 0.75,
     ) -> None:
         self.llm = LLM(model=model_id, gpu_memory_utilization=gpu_memory_utilization)
 
