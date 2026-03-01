@@ -5,6 +5,10 @@ Modes:
   default:    5 sanity checks + micro E2E (HF generate stand-in)
   --skip-e2e: 5 sanity checks only
   --full-e2e: 5 sanity checks + full pipeline E2E (vLLM + activation capture)
+
+Usage:
+  python -m experiments.scripts.00_sanity_check --model ministral-8b
+  python -m experiments.scripts.00_sanity_check --model ministral-8b --full-e2e
 """
 
 from __future__ import annotations
@@ -582,6 +586,7 @@ def main() -> int:
             "Run on GPU before any full pipeline stage."
         ),
     )
+    config.add_model_arg(parser)
     e2e_group = parser.add_mutually_exclusive_group()
     e2e_group.add_argument(
         "--skip-e2e",
@@ -594,6 +599,11 @@ def main() -> int:
         help="Run full pipeline E2E with actual vLLM + activation capture.",
     )
     args = parser.parse_args()
+
+    config.set_model(args.model)
+    print(f"Model: {config.MODEL_NAME} ({config.MODEL_ID})")
+    print(f"  Layers: {config.MODEL_NUM_LAYERS}, Capture layer: {config.CAPTURE_LAYER}, "
+          f"Hidden dim: {config.MODEL_HIDDEN_DIM}\n")
 
     if not torch.cuda.is_available():
         print("FAIL: CUDA is not available. Sanity checks require a GPU.")

@@ -1,19 +1,114 @@
-"""Pipeline configuration. Single source of truth for all parameters."""
+"""Pipeline configuration. Single source of truth for all parameters.
 
+Model selection: call set_model("model-name") before using any config values,
+or pass --model to scripts. Default: ministral-8b.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
 from pathlib import Path
 
-# --- Model ---
-MODEL_ID = "mistralai/Ministral-8B-Instruct-2410"
-MODEL_DTYPE = "float16"
-MODEL_HIDDEN_DIM = 4096
-MODEL_NUM_LAYERS = 36
 
-# --- Activation capture ---
-# Layer 18 (50% of 36) = index 19 in output_hidden_states (index 0 = embeddings)
-CAPTURE_LAYER = 18
-HIDDEN_STATES_INDEX = CAPTURE_LAYER + 1  # off-by-one: hidden_states[0] = embeddings
+# ---------------------------------------------------------------------------
+# Model registry
+# ---------------------------------------------------------------------------
 
-# --- Generation ---
+@dataclass
+class ModelConfig:
+    model_id: str
+    num_layers: int
+    hidden_dim: int = 4096
+
+    @property
+    def capture_layer(self) -> int:
+        """50% point of the network — richest semantic representations."""
+        return self.num_layers // 2
+
+    @property
+    def hidden_states_index(self) -> int:
+        """Index into output_hidden_states (0 = embeddings, i+1 = layer i)."""
+        return self.capture_layer + 1
+
+
+MODELS: dict[str, ModelConfig] = {
+    "mistral-7b": ModelConfig(
+        model_id="mistralai/Mistral-7B-Instruct-v0.3",
+        num_layers=32,
+    ),
+    "ministral-8b": ModelConfig(
+        model_id="mistralai/Ministral-8B-Instruct-2410",
+        num_layers=36,
+    ),
+}
+
+# ---------------------------------------------------------------------------
+# Active model config (set by set_model(), used by all pipeline modules)
+# ---------------------------------------------------------------------------
+
+MODEL_NAME: str = ""
+MODEL_ID: str = ""
+MODEL_DTYPE: str = "float16"
+MODEL_HIDDEN_DIM: int = 4096
+MODEL_NUM_LAYERS: int = 0
+CAPTURE_LAYER: int = 0
+HIDDEN_STATES_INDEX: int = 0
+
+# Storage paths (model-specific)
+SCRATCH_ROOT = Path("/scratch")
+SCRATCH_DIR = Path("")
+GENERATIONS_DIR = Path("")
+ACTIVATIONS_DIR = Path("")
+SAE_DIR = Path("")
+STEERING_DIR = Path("")
+ANALYSIS_DIR = Path("")
+ALL_SCRATCH_DIRS: list[Path] = []
+
+
+def set_model(name: str) -> None:
+    """Reconfigure all model-dependent settings. Call early, before imports that read config."""
+    global MODEL_NAME, MODEL_ID, MODEL_HIDDEN_DIM, MODEL_NUM_LAYERS
+    global CAPTURE_LAYER, HIDDEN_STATES_INDEX
+    global SCRATCH_DIR, GENERATIONS_DIR, ACTIVATIONS_DIR
+    global SAE_DIR, STEERING_DIR, ANALYSIS_DIR, ALL_SCRATCH_DIRS
+
+    if name not in MODELS:
+        raise ValueError(f"Unknown model '{name}'. Available: {list(MODELS.keys())}")
+
+    m = MODELS[name]
+    MODEL_NAME = name
+    MODEL_ID = m.model_id
+    MODEL_HIDDEN_DIM = m.hidden_dim
+    MODEL_NUM_LAYERS = m.num_layers
+    CAPTURE_LAYER = m.capture_layer
+    HIDDEN_STATES_INDEX = m.hidden_states_index
+
+    SCRATCH_DIR = SCRATCH_ROOT / name
+    GENERATIONS_DIR = SCRATCH_DIR / "generations"
+    ACTIVATIONS_DIR = SCRATCH_DIR / "activations"
+    SAE_DIR = SCRATCH_DIR / "sae"
+    STEERING_DIR = SCRATCH_DIR / "steering"
+    ANALYSIS_DIR = SCRATCH_DIR / "analysis"
+    ALL_SCRATCH_DIRS = [GENERATIONS_DIR, ACTIVATIONS_DIR, SAE_DIR, STEERING_DIR, ANALYSIS_DIR]
+
+
+def add_model_arg(parser) -> None:
+    """Add --model argument to an argparse parser. Call set_model(args.model) after parsing."""
+    parser.add_argument(
+        "--model", type=str, default="ministral-8b",
+        choices=list(MODELS.keys()),
+        help=f"Model config to use (default: ministral-8b)",
+    )
+
+
+# Initialize with default
+set_model("ministral-8b")
+
+
+# ---------------------------------------------------------------------------
+# Generation parameters (shared across models)
+# ---------------------------------------------------------------------------
+
 TEMPERATURE = 0.7
 TOP_P = 0.95
 MAX_NEW_TOKENS = 512
@@ -59,13 +154,8 @@ VARIANT_IDS = list(VARIANTS.keys())
 
 # --- Failure categories ---
 FAILURE_CATEGORIES = [
-    "pass",
-    "wrong_answer",
-    "syntax_error",
-    "type_error",
-    "runtime_error",
-    "timeout",
-    "extraction_fail",
+    "pass", "wrong_answer", "syntax_error", "type_error",
+    "runtime_error", "timeout", "extraction_fail",
 ]
 
 # --- SAE ---
@@ -74,7 +164,6 @@ SAE_K = 64  # TopK sparsity: exactly K active features per token
 SAE_TRAINING_TOKENS = 2_000_000
 
 # --- Steering ---
-# 3 SAE features × 3 conditions (+α, −α, random) × 164 tasks + 164 baseline
 STEERING_NUM_FEATURES = 3
 STEERING_ALPHAS = [1.0, 3.0, 5.0, -3.0]
 STEERING_TASKS = 164  # HumanEval only for steering
@@ -82,21 +171,3 @@ STEERING_TASKS = 164  # HumanEval only for steering
 # --- Weights & Biases ---
 WANDB_PROJECT = "pl-interp"
 WANDB_ENTITY = None  # override via WANDB_ENTITY env var
-
-# --- Storage ---
-# NVMe scratch on VM (ephemeral, 7TB, fast sequential writes)
-# Model-specific subdirectory to allow multiple model runs
-SCRATCH_DIR = Path("/scratch/ministral-8b")
-GENERATIONS_DIR = SCRATCH_DIR / "generations"
-ACTIVATIONS_DIR = SCRATCH_DIR / "activations"
-SAE_DIR = SCRATCH_DIR / "sae"
-STEERING_DIR = SCRATCH_DIR / "steering"
-ANALYSIS_DIR = SCRATCH_DIR / "analysis"
-
-ALL_SCRATCH_DIRS = [
-    GENERATIONS_DIR,
-    ACTIVATIONS_DIR,
-    SAE_DIR,
-    STEERING_DIR,
-    ANALYSIS_DIR,
-]

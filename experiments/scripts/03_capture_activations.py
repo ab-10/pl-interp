@@ -1,15 +1,15 @@
-"""Stage 3: Capture layer-16 activations via HF teacher-forcing.
+"""Stage 3: Capture mid-layer activations via HF teacher-forcing.
 
-Reads: /scratch/generations/shard_{N}.jsonl (evaluated records with gen_token_ids)
-Writes: /scratch/activations/shard_{N}.npy (memory-mapped float16 activations)
+Reads: /scratch/<model>/generations/shard_{N}.jsonl (evaluated records with gen_token_ids)
+Writes: /scratch/<model>/activations/shard_{N}.npy (memory-mapped float16 activations)
 Updates: shard JSONL with activation_file, activation_offset, activation_length
 
 Uses HF model (not vLLM) for forward pass with output_hidden_states=True.
 Sharded by GPU — each shard processes its own generation records.
 
 Usage:
-  CUDA_VISIBLE_DEVICES=0 python -m experiments.scripts.03_capture_activations --shard 0
-  CUDA_VISIBLE_DEVICES=1 python -m experiments.scripts.03_capture_activations --shard 1
+  CUDA_VISIBLE_DEVICES=0 python -m experiments.scripts.03_capture_activations --model ministral-8b --shard 0
+  CUDA_VISIBLE_DEVICES=1 python -m experiments.scripts.03_capture_activations --model ministral-8b --shard 1
 """
 
 from __future__ import annotations
@@ -19,6 +19,8 @@ import sys
 import time
 from pathlib import Path
 
+import wandb
+
 from experiments import config
 from experiments.generation.activation_capture import ActivationCapture
 from experiments.storage.activation_store import ActivationWriter
@@ -27,8 +29,9 @@ from experiments.storage.schema import read_records
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Stage 3: Capture layer-16 activations via HF teacher-forcing.",
+        description="Stage 3: Capture mid-layer activations via HF teacher-forcing.",
     )
+    config.add_model_arg(parser)
     parser.add_argument(
         "--shard", type=int, required=True,
         help="GPU shard index (0-based), matches generation shard",
@@ -39,7 +42,27 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    config.set_model(args.model)
+
+    # --- W&B ---
+    run = wandb.init(
+        project=config.WANDB_PROJECT,
+        entity=config.WANDB_ENTITY,
+        name=f"03_capture_{config.MODEL_NAME}_shard{args.shard}",
+        config={
+            "stage": "03_capture_activations",
+            "model": config.MODEL_NAME,
+            "model_id": config.MODEL_ID,
+            "shard": args.shard,
+            "capture_layer": config.CAPTURE_LAYER,
+            "hidden_states_index": config.HIDDEN_STATES_INDEX,
+            "hidden_dim": config.MODEL_HIDDEN_DIM,
+            "batch_size": args.batch_size,
+        },
+    )
+
     # --- Load evaluated records ---
+    print(f"Model: {config.MODEL_NAME} (capture layer {config.CAPTURE_LAYER})")
     shard_file = config.GENERATIONS_DIR / f"shard_{args.shard}.jsonl"
     if not shard_file.exists():
         print(f"Shard file not found: {shard_file}")
@@ -97,6 +120,14 @@ def main() -> int:
             f.write(record.to_json_line() + "\n")
     tmp_path.rename(shard_file)
     print(f"Updated records saved to {shard_file}")
+
+    # --- W&B summary ---
+    wandb.log({
+        "total_records": len(pending),
+        "total_tokens": total_tokens,
+        "capture_time_s": elapsed,
+    })
+    wandb.finish()
 
     return 0
 

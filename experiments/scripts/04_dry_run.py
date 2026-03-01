@@ -11,10 +11,12 @@ What this catches that 00_sanity_check doesn't:
 
 Usage:
   python3 -m experiments.scripts.04_dry_run
+  python3 -m experiments.scripts.04_dry_run --model mistral-7b
 """
 
 from __future__ import annotations
 
+import argparse
 import gc
 import shutil
 import sys
@@ -24,17 +26,7 @@ from pathlib import Path
 
 import torch
 
-# --- Patch config to use temp dir and tiny subset BEFORE importing pipeline modules ---
 import experiments.config as config
-
-_tmp_dir = Path(tempfile.mkdtemp(prefix="dry_run_"))
-config.SCRATCH_DIR = _tmp_dir
-config.GENERATIONS_DIR = _tmp_dir / "generations"
-config.ACTIVATIONS_DIR = _tmp_dir / "activations"
-config.VARIANT_IDS = ["baseline"]
-config.NUM_RUNS = 1
-
-# Now import pipeline modules (they read from patched config)
 from transformers import AutoTokenizer
 
 from experiments.datasets.load_humaneval import load_humaneval
@@ -60,13 +52,28 @@ def _print_result(label: str, passed: bool, detail: str = ""):
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Pre-flight dry run.")
+    config.add_model_arg(parser)
+    args = parser.parse_args()
+
+    config.set_model(args.model)
+
     if not torch.cuda.is_available():
         print("FAIL: CUDA not available.")
         return 1
 
+    # Patch config to use temp dir and tiny subset
+    _tmp_dir = Path(tempfile.mkdtemp(prefix="dry_run_"))
+    config.SCRATCH_DIR = _tmp_dir
+    config.GENERATIONS_DIR = _tmp_dir / "generations"
+    config.ACTIVATIONS_DIR = _tmp_dir / "activations"
+    config.VARIANT_IDS = ["baseline"]
+    config.NUM_RUNS = 1
+
     all_ok = True
     t_start = time.time()
 
+    print(f"Model: {config.MODEL_NAME} ({config.MODEL_ID})")
     print(f"Dry run temp dir: {_tmp_dir}")
     print(f"Config: 1 variant (baseline), 1 run (seed {config.BASE_SEED})\n")
 

@@ -1,11 +1,8 @@
 """Stage 1: Generate all code outputs with vLLM. Sharded by task_id across GPUs.
 
-Reads: HumanEval + MBPP datasets (downloaded automatically)
-Writes: /scratch/generations/shard_{N}.jsonl
-
 Usage:
-  CUDA_VISIBLE_DEVICES=0 python -m experiments.scripts.01_generate --shard 0
-  CUDA_VISIBLE_DEVICES=1 python -m experiments.scripts.01_generate --shard 1
+  CUDA_VISIBLE_DEVICES=0 python -m experiments.scripts.01_generate --model ministral-8b --shard 0
+  CUDA_VISIBLE_DEVICES=1 python -m experiments.scripts.01_generate --model ministral-8b --shard 1
 """
 
 from __future__ import annotations
@@ -13,9 +10,8 @@ from __future__ import annotations
 import argparse
 import sys
 import time
-from pathlib import Path
 
-from transformers import AutoTokenizer
+import wandb
 
 from experiments import config
 from experiments.datasets.load_humaneval import load_humaneval
@@ -38,7 +34,6 @@ def _build_jobs(tasks: list[dict], tokenizer) -> list[dict]:
                 user_content = build_mbpp_prompt(task, variant_id)
                 func_name = task["function_name"]
 
-            # Apply chat template for vLLM prompt
             messages = [{"role": "user", "content": user_content}]
             prompt_token_ids = tokenizer.apply_chat_template(
                 messages, add_generation_prompt=True
@@ -63,7 +58,7 @@ def _build_jobs(tasks: list[dict], tokenizer) -> list[dict]:
 
 
 def _apply_chat_template(tokenizer, user_content: str) -> str:
-    """Apply Mistral chat template to user message content."""
+    """Apply chat template to user message content."""
     messages = [{"role": "user", "content": user_content}]
     token_ids = tokenizer.apply_chat_template(
         messages, add_generation_prompt=True
@@ -75,20 +70,38 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Stage 1: Generate code outputs with vLLM, sharded by task_id.",
     )
-    parser.add_argument(
-        "--shard", type=int, required=True,
-        help="GPU shard index (0-based)",
-    )
-    parser.add_argument(
-        "--num-shards", type=int, default=config.NUM_GPUS,
-        help=f"Total number of GPU shards (default: {config.NUM_GPUS})",
-    )
+    config.add_model_arg(parser)
+    parser.add_argument("--shard", type=int, required=True, help="GPU shard index (0-based)")
+    parser.add_argument("--num-shards", type=int, default=2, help="Total number of GPU shards")
     args = parser.parse_args()
+
+    config.set_model(args.model)
 
     config.GENERATIONS_DIR.mkdir(parents=True, exist_ok=True)
     output_path = config.GENERATIONS_DIR / f"shard_{args.shard}.jsonl"
 
+    # --- W&B ---
+    run = wandb.init(
+        project=config.WANDB_PROJECT,
+        entity=config.WANDB_ENTITY,
+        name=f"01_generate_{config.MODEL_NAME}_shard{args.shard}",
+        config={
+            "stage": "01_generate",
+            "model": config.MODEL_NAME,
+            "model_id": config.MODEL_ID,
+            "shard": args.shard,
+            "num_shards": args.num_shards,
+            "temperature": config.TEMPERATURE,
+            "top_p": config.TOP_P,
+            "max_new_tokens": config.MAX_NEW_TOKENS,
+            "num_runs": config.NUM_RUNS,
+            "base_seed": config.BASE_SEED,
+            "variants": config.VARIANT_IDS,
+        },
+    )
+
     # --- Load tokenizer ---
+    from transformers import AutoTokenizer
     print("Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(config.MODEL_ID)
 
@@ -97,26 +110,27 @@ def main() -> int:
     all_tasks = load_humaneval() + load_mbpp()
     print(f"Total tasks: {len(all_tasks)}")
 
-    # Shard by task index
     my_tasks = all_tasks[args.shard :: args.num_shards]
     print(f"Shard {args.shard}/{args.num_shards}: {len(my_tasks)} tasks")
 
-    # --- Build all jobs ---
     jobs = _build_jobs(my_tasks, tokenizer)
     print(f"Total jobs (tasks x variants x runs): {len(jobs)}")
+
+    wandb.log({"total_tasks": len(all_tasks), "shard_tasks": len(my_tasks), "total_jobs": len(jobs)})
 
     # --- Initialize vLLM ---
     print("Initializing vLLM...")
     runner = VLLMRunner()
 
-    # --- Generate per run_id (each run has a different seed) ---
-    records_with_func = []  # list of (GenerationRecord, func_name)
+    # --- Generate per run_id ---
+    records_with_func = []
+    t_gen_start = time.time()
 
     for run_id in range(config.NUM_RUNS):
         run_jobs = [j for j in jobs if j["run_id"] == run_id]
         seed = config.BASE_SEED + run_id
-
         prompts = [j["full_prompt"] for j in run_jobs]
+
         print(f"\nRun {run_id} (seed={seed}): generating {len(prompts)} outputs...")
         t0 = time.time()
 
@@ -128,7 +142,9 @@ def main() -> int:
             seed=seed,
         )
         elapsed = time.time() - t0
-        print(f"  Generated in {elapsed:.1f}s ({len(prompts)/elapsed:.1f} prompts/s)")
+        rate = len(prompts) / elapsed
+        print(f"  Generated in {elapsed:.1f}s ({rate:.1f} prompts/s)")
+        wandb.log({f"run_{run_id}/gen_time_s": elapsed, f"run_{run_id}/prompts_per_s": rate})
 
         for job, result in zip(run_jobs, results):
             task = job["task"]
@@ -138,13 +154,15 @@ def main() -> int:
                 variant_id=job["variant_id"],
                 run_id=job["run_id"],
                 seed=job["seed"],
-                prompt_text=job["user_content"],  # store user message content
+                prompt_text=job["user_content"],
                 prompt_tokens=job["prompt_tokens"],
                 generated_text=result["text"],
                 gen_token_ids=result["token_ids"],
                 generated_tokens=len(result["token_ids"]),
             )
             records_with_func.append((record, job["func_name"]))
+
+    gen_elapsed = time.time() - t_gen_start
 
     # --- Extract code ---
     print(f"\nExtracting code from {len(records_with_func)} generations...")
@@ -160,6 +178,7 @@ def main() -> int:
     print(f"  {clean_count} clean, {len(extraction_failures)} failures")
 
     # --- Retry extraction failures with greedy ---
+    retried_ok = 0
     if extraction_failures:
         print(f"\nRetrying {len(extraction_failures)} failures at temp=0.0...")
         retry_prompts = [
@@ -172,12 +191,10 @@ def main() -> int:
             seed=config.BASE_SEED,
         )
 
-        retried_ok = 0
         for (record, func_name), result in zip(extraction_failures, retry_results):
             record.extraction_retried = True
             extracted, clean = extract_code(result["text"], func_name)
             if clean:
-                # Replace generation with retry output
                 record.generated_text = result["text"]
                 record.gen_token_ids = result["token_ids"]
                 record.generated_tokens = len(result["token_ids"])
@@ -192,20 +209,25 @@ def main() -> int:
     # --- Save records ---
     all_records = [rec for rec, _ in records_with_func]
     print(f"\nSaving {len(all_records)} records to {output_path}...")
-    # Truncate if file exists (fresh write, not append)
     if output_path.exists():
         output_path.unlink()
     write_records(output_path, all_records)
 
-    # --- Summary ---
+    # --- Summary + W&B ---
     clean_final = sum(1 for r in all_records if r.extraction_clean)
     retried = sum(1 for r in all_records if r.extraction_retried)
-    retry_ok = sum(1 for r in all_records if r.retry_succeeded)
-    print(f"\nSummary:")
-    print(f"  Total records: {len(all_records)}")
-    print(f"  Clean extraction: {clean_final}")
-    print(f"  Retried: {retried} (succeeded: {retry_ok})")
-    print(f"  Extraction failures: {len(all_records) - clean_final}")
+    summary = {
+        "total_records": len(all_records),
+        "clean_extraction": clean_final,
+        "extraction_failures": len(all_records) - clean_final,
+        "retried": retried,
+        "retry_succeeded": retried_ok,
+        "generation_time_s": gen_elapsed,
+    }
+    print(f"\nSummary: {summary}")
+    wandb.log(summary)
+    wandb.finish()
+
     return 0
 
 

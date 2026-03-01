@@ -1,12 +1,12 @@
 """Stage 2: Evaluate all generated code against HumanEval/MBPP test cases.
 
-Reads: /scratch/generations/shard_*.jsonl + HumanEval/MBPP datasets
-Writes: /scratch/generations/shard_*.jsonl (updated with evaluation results)
+Reads: /scratch/<model>/generations/shard_*.jsonl + HumanEval/MBPP datasets
+Writes: /scratch/<model>/generations/shard_*.jsonl (updated with evaluation results)
 
 CPU-bound — no GPU needed. Processes all shards sequentially.
 
 Usage:
-  python -m experiments.scripts.02_evaluate
+  python -m experiments.scripts.02_evaluate --model ministral-8b
 """
 
 from __future__ import annotations
@@ -15,6 +15,8 @@ import argparse
 import sys
 import time
 from pathlib import Path
+
+import wandb
 
 from experiments import config
 from experiments.datasets.load_humaneval import load_humaneval
@@ -32,11 +34,28 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Stage 2: Evaluate generated code against test cases.",
     )
+    config.add_model_arg(parser)
     parser.add_argument(
-        "--input-dir", type=Path, default=config.GENERATIONS_DIR,
-        help="Directory containing shard JSONL files",
+        "--input-dir", type=Path, default=None,
+        help="Directory containing shard JSONL files (default: model's generations dir)",
     )
     args = parser.parse_args()
+
+    config.set_model(args.model)
+    input_dir = args.input_dir or config.GENERATIONS_DIR
+
+    # --- W&B ---
+    run = wandb.init(
+        project=config.WANDB_PROJECT,
+        entity=config.WANDB_ENTITY,
+        name=f"02_evaluate_{config.MODEL_NAME}",
+        config={
+            "stage": "02_evaluate",
+            "model": config.MODEL_NAME,
+            "model_id": config.MODEL_ID,
+            "extraction_timeout": config.EXTRACTION_TIMEOUT,
+        },
+    )
 
     # --- Load test harnesses ---
     print("Loading datasets for test harnesses...")
@@ -44,9 +63,9 @@ def main() -> int:
     mbpp_tasks = {t["task_id"]: t for t in load_mbpp()}
 
     # --- Find shard files ---
-    shard_files = sorted(args.input_dir.glob("shard_*.jsonl"))
+    shard_files = sorted(input_dir.glob("shard_*.jsonl"))
     if not shard_files:
-        print(f"No shard files found in {args.input_dir}")
+        print(f"No shard files found in {input_dir}")
         return 1
     print(f"Found {len(shard_files)} shard files")
 
@@ -113,9 +132,17 @@ def main() -> int:
         total_records += len(records)
         total_passed += pass_count
 
-    # --- Summary ---
+    # --- Summary + W&B ---
     pct = 100 * total_passed / total_records if total_records else 0
     print(f"\nTotal: {total_passed}/{total_records} passed ({pct:.1f}%)")
+
+    wandb.log({
+        "total_records": total_records,
+        "total_passed": total_passed,
+        "pass_rate": pct,
+    })
+    wandb.finish()
+
     return 0
 
 
