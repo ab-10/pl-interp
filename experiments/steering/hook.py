@@ -29,8 +29,8 @@ def make_steering_hook(
         hidden_states = output[0] if is_tuple else output
 
         if hidden_states.shape[1] == 1 and alpha != 0.0:
-            # Decode step: inject steering direction
-            hidden_states = hidden_states + alpha * direction
+            # Decode step: inject steering direction (match dtype to avoid float32 promotion)
+            hidden_states = hidden_states + alpha * direction.to(hidden_states.dtype)
             if is_tuple:
                 return (hidden_states,) + output[1:]
             return hidden_states
