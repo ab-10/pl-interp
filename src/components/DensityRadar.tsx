@@ -5,7 +5,6 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
-  PolarRadiusAxis,
   ResponsiveContainer,
   Legend,
 } from "recharts";
@@ -29,39 +28,37 @@ interface DensityRadarProps {
 export default function DensityRadar({ baselineDensity, steeredDensity }: DensityRadarProps) {
   const properties = Object.keys(PROPERTY_LABELS);
 
+  // Check if baseline and steered are identical (no steering applied)
+  const isIdentical = properties.every(
+    (p) => Math.abs((baselineDensity[p] ?? 0) - (steeredDensity[p] ?? 0)) < 0.001
+  );
+
   const data = properties.map((prop) => ({
     property: PROPERTY_LABELS[prop] ?? prop,
     baseline: baselineDensity[prop] ?? 0,
     steered: steeredDensity[prop] ?? 0,
   }));
 
-  // Find max for domain scaling
-  const maxVal = Math.max(
-    ...data.map((d) => Math.max(d.baseline, d.steered)),
-    0.1,
-  );
-
   return (
     <div className="w-full" style={{ height: 320 }}>
+      {isIdentical && (
+        <p className="text-center text-xs text-zinc-400 mb-2">
+          No steering applied — baseline and steered densities are identical
+        </p>
+      )}
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid stroke="#3f3f46" />
+          <PolarGrid stroke="#e4e4e7" />
           <PolarAngleAxis
             dataKey="property"
-            tick={{ fill: "#a1a1aa", fontSize: 11 }}
-          />
-          <PolarRadiusAxis
-            angle={90}
-            domain={[0, Math.ceil(maxVal * 10) / 10]}
-            tick={{ fill: "#71717a", fontSize: 9 }}
-            tickCount={4}
+            tick={{ fill: "#71717a", fontSize: 11 }}
           />
           <Radar
             name="Baseline"
             dataKey="baseline"
-            stroke="#71717a"
-            fill="#71717a"
-            fillOpacity={0.15}
+            stroke="#a1a1aa"
+            fill="#a1a1aa"
+            fillOpacity={0.1}
             strokeWidth={1.5}
           />
           <Radar
@@ -69,11 +66,11 @@ export default function DensityRadar({ baselineDensity, steeredDensity }: Densit
             dataKey="steered"
             stroke="#3b82f6"
             fill="#3b82f6"
-            fillOpacity={0.2}
+            fillOpacity={0.15}
             strokeWidth={2}
           />
           <Legend
-            wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }}
+            wrapperStyle={{ fontSize: 11, color: "#71717a" }}
           />
         </RadarChart>
       </ResponsiveContainer>

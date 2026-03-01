@@ -30,8 +30,8 @@ export default function Sparkline({ data, width = 48, height = 16 }: SparklinePr
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   const areaPath = `${linePath} L ${points[2].x} ${pad + plotH} L ${points[0].x} ${pad + plotH} Z`;
 
-  const color = data.is_monotonic ? "#22c55e" : "#71717a";
-  const fillColor = data.is_monotonic ? "#22c55e" : "#71717a";
+  const color = data.is_monotonic ? "#16a34a" : "#a1a1aa";
+  const fillColor = data.is_monotonic ? "#16a34a" : "#a1a1aa";
 
   return (
     <svg

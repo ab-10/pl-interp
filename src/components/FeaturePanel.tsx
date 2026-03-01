@@ -31,13 +31,13 @@ export default function FeaturePanel({
   if (loading) {
     return (
       <div className="flex flex-col gap-3">
-        <h3 className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <h3 className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
           Features
         </h3>
         {[...Array(4)].map((_, i) => (
           <div key={i} className="flex flex-col gap-1.5 animate-pulse">
-            <div className="h-3 w-2/3 rounded bg-zinc-800" />
-            <div className="h-[6px] w-full rounded-full bg-zinc-800" />
+            <div className="h-3 w-2/3 rounded bg-zinc-200" />
+            <div className="h-[6px] w-full rounded-full bg-zinc-200" />
           </div>
         ))}
       </div>
@@ -58,7 +58,7 @@ export default function FeaturePanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+      <h3 className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
         Steering
       </h3>
       {steeringFeatures.map((feature) => (
@@ -76,7 +76,7 @@ export default function FeaturePanel({
         <>
           <button
             onClick={() => setControlsOpen(!controlsOpen)}
-            className="flex items-center gap-1.5 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors mt-1"
+            className="flex items-center gap-1.5 text-[11px] text-zinc-400 hover:text-zinc-600 transition-colors mt-1"
           >
             <svg
               className={`h-3 w-3 transition-transform ${controlsOpen ? "rotate-90" : ""}`}
@@ -90,7 +90,7 @@ export default function FeaturePanel({
             Controls ({controlFeatures.length})
           </button>
           {controlsOpen && (
-            <div className="flex flex-col gap-3 ml-1 pl-3 border-l border-zinc-800/50">
+            <div className="flex flex-col gap-3 ml-1 pl-3 border-l border-zinc-200">
               {controlFeatures.map((feature) => (
                 <FeatureSlider
                   key={feature.id}
@@ -105,7 +105,7 @@ export default function FeaturePanel({
         </>
       )}
 
-      <div className="h-px bg-zinc-800/50 mt-1" />
+      <div className="h-px bg-zinc-200 mt-1" />
 
       <CustomFeatureInput
         customStrengths={customStrengths}

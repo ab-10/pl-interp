@@ -27,7 +27,7 @@ export default function TokenHeatmap({ tokens, activeFeatureIds }: TokenHeatmapP
 
   return (
     <div className="relative">
-      <pre className="overflow-auto rounded-lg bg-zinc-900 p-4 text-sm leading-relaxed">
+      <pre className="overflow-auto rounded-lg border border-zinc-200 bg-white p-4 text-sm leading-relaxed">
         <code>
           {tokens.map((tok, i) => {
             // Sum activation across active features
@@ -38,10 +38,10 @@ export default function TokenHeatmap({ tokens, activeFeatureIds }: TokenHeatmapP
             const intensity = Math.min(Math.abs(totalAct) / maxAct, 1);
             const isPositive = totalAct >= 0;
 
-            // Blue for positive activation, red-orange for negative
+            // Blue for positive activation, red for negative
             const bg = isPositive
-              ? `rgba(59, 130, 246, ${intensity * 0.6})`
-              : `rgba(239, 68, 68, ${intensity * 0.6})`;
+              ? `rgba(59, 130, 246, ${intensity * 0.4})`
+              : `rgba(239, 68, 68, ${intensity * 0.4})`;
 
             return (
               <span
@@ -53,14 +53,14 @@ export default function TokenHeatmap({ tokens, activeFeatureIds }: TokenHeatmapP
               >
                 {tok.token}
                 {hoveredIdx === i && Object.keys(tok.activations).length > 0 && (
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 whitespace-nowrap rounded bg-zinc-800 border border-zinc-600 px-2 py-1 text-xs text-zinc-200 shadow-lg pointer-events-none">
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 whitespace-nowrap rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 shadow-lg pointer-events-none">
                     {featureKeys.map((key) => {
                       const v = tok.activations[key];
                       if (v === undefined) return null;
                       return (
                         <div key={key}>
                           <span className="text-zinc-400">#{key}:</span>{" "}
-                          <span className={v > 0 ? "text-blue-400" : v < 0 ? "text-red-400" : "text-zinc-400"}>
+                          <span className={v > 0 ? "text-blue-600" : v < 0 ? "text-red-600" : "text-zinc-400"}>
                             {v > 0 ? "+" : ""}{v.toFixed(4)}
                           </span>
                         </div>

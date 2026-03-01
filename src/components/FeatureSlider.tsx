@@ -22,16 +22,16 @@ export default function FeatureSlider({
 }: FeatureSliderProps) {
   const color =
     value > 0
-      ? "text-emerald-400"
+      ? "text-emerald-600"
       : value < 0
-        ? "text-rose-400"
-        : "text-zinc-600";
+        ? "text-rose-600"
+        : "text-zinc-400";
 
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between gap-2">
         <span
-          className="min-w-0 truncate text-[12px] text-zinc-400"
+          className="min-w-0 truncate text-[12px] text-zinc-700"
           title={label}
         >
           {label}

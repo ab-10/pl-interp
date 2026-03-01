@@ -2,23 +2,21 @@
 
 import { useCallback, useEffect } from "react";
 import { SweepResult } from "@/lib/types";
-import TokenHeatmap from "./TokenHeatmap";
+import { diffLines, Change } from "diff";
 
 interface AlphaSweepProps {
   results: SweepResult[];
+  baselineText: string;
   selectedIndex: number;
   onIndexChange: (index: number) => void;
-  activeFeatureIds: number[];
-  showHeatmap: boolean;
 }
 
-/** Discrete scrubber for browsing code at different steering alpha levels. */
+/** Discrete scrubber showing diff vs baseline at different steering alpha levels. */
 export default function AlphaSweep({
   results,
+  baselineText,
   selectedIndex,
   onIndexChange,
-  activeFeatureIds,
-  showHeatmap,
 }: AlphaSweepProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -39,20 +37,21 @@ export default function AlphaSweep({
   if (results.length === 0) return null;
 
   const current = results[selectedIndex];
+  const changes = diffLines(baselineText, current?.text ?? "");
 
   return (
     <div className="flex flex-col gap-3">
       {/* Scrubber bar */}
       <div className="flex items-center gap-1">
-        <span className="text-xs text-zinc-500 mr-2">Alpha:</span>
+        <span className="text-xs text-zinc-400 mr-2">Alpha:</span>
         {results.map((r, i) => (
           <button
             key={i}
             onClick={() => onIndexChange(i)}
             className={`px-2 py-0.5 text-xs rounded font-mono transition-colors ${
               i === selectedIndex
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                ? "bg-zinc-900 text-white"
+                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700"
             }`}
           >
             {r.alpha > 0 ? "+" : ""}{r.alpha.toFixed(1)}x
@@ -60,17 +59,38 @@ export default function AlphaSweep({
         ))}
       </div>
 
-      {/* Code at selected alpha */}
-      {showHeatmap && current?.token_activations ? (
-        <TokenHeatmap
-          tokens={current.token_activations}
-          activeFeatureIds={activeFeatureIds}
-        />
-      ) : (
-        <pre className="overflow-auto rounded-lg bg-zinc-900 p-4 text-sm leading-relaxed">
-          <code className="text-zinc-300">{current?.text ?? ""}</code>
-        </pre>
-      )}
+      {/* Diff view at selected alpha */}
+      <pre className="overflow-auto rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-[13px] leading-relaxed font-mono">
+        <code>
+          {changes.map((change: Change, i: number) => {
+            const lines = change.value.replace(/\n$/, "").split("\n");
+            return lines.map((line: string, j: number) => {
+              if (change.added) {
+                return (
+                  <div key={`${i}-${j}`} className="bg-emerald-50 text-emerald-800">
+                    <span className="mr-2 inline-block w-4 select-none text-emerald-400">+</span>
+                    {line}
+                  </div>
+                );
+              }
+              if (change.removed) {
+                return (
+                  <div key={`${i}-${j}`} className="bg-red-50 text-red-800">
+                    <span className="mr-2 inline-block w-4 select-none text-red-400">-</span>
+                    {line}
+                  </div>
+                );
+              }
+              return (
+                <div key={`${i}-${j}`} className="text-zinc-600">
+                  <span className="mr-2 inline-block w-4 select-none text-zinc-300">&nbsp;</span>
+                  {line}
+                </div>
+              );
+            });
+          })}
+        </code>
+      </pre>
     </div>
   );
 }

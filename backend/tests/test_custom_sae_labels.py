@@ -71,52 +71,49 @@ class TestFindMonotonicity:
 
 
 class TestBuildFeatureLabel:
-    def test_monotonic_with_redirection(self, mistral_7b_candidates, mistral_7b_steering):
-        """Feature 40693: selected as error_handling, actually steers control_flow."""
+    def test_monotonic_shows_direction(self, mistral_7b_candidates, mistral_7b_steering):
+        """Feature 40693: monotonic control_flow -> label should say 'Increases Control Flow'."""
         candidate = next(
             c for c in mistral_7b_candidates["candidates"]
             if c["feature_idx"] == 40693
         )
         label = _build_feature_label(candidate, mistral_7b_steering)
-        assert "error_handling" in label
-        assert "control_flow" in label
-        assert "monotonic" in label
-        assert "->" in label  # shows redirection
+        assert "Control Flow" in label
+        assert label.startswith("Increases") or label.startswith("Decreases")
 
-    def test_different_property_shows_arrow(self, mistral_7b_candidates, mistral_7b_steering):
-        """Feature 123379: control_flow -> type_annotations (different, so has arrow)."""
+    def test_non_monotonic_shows_property_name(self, mistral_7b_candidates, mistral_7b_steering):
+        """Feature 123379: non-monotonic -> label should be just the property display name."""
         candidate = next(
             c for c in mistral_7b_candidates["candidates"]
             if c["feature_idx"] == 123379
         )
         label = _build_feature_label(candidate, mistral_7b_steering)
-        assert "->" in label
+        # Non-monotonic: should just show the property name without Increases/Decreases
+        assert not label.startswith("Increases")
+        assert not label.startswith("Decreases")
 
     def test_fallback_without_steering_data(self, mistral_7b_candidates):
-        """Without steering results, falls back to Cohen's d label."""
+        """Without steering results, falls back to title-cased variant name."""
         candidate = next(
             c for c in mistral_7b_candidates["candidates"]
             if c["feature_idx"] == 40693
         )
         label = _build_feature_label(candidate, {})
-        assert "error_handling" in label
-        assert "d=" in label
-        assert "monotonic" not in label
+        assert label == "Error Handling"
 
     def test_labels_are_strings(self, mistral_7b_candidates, mistral_7b_steering):
         for c in mistral_7b_candidates["candidates"]:
             label = _build_feature_label(c, mistral_7b_steering)
             assert isinstance(label, str)
-            assert len(label) > 5
+            assert len(label) > 3
 
-    def test_effect_size_in_label(self, mistral_7b_candidates, mistral_7b_steering):
-        """Effect size should appear in the label when analysis is available."""
-        candidate = next(
-            c for c in mistral_7b_candidates["candidates"]
-            if c["feature_idx"] == 40693
-        )
-        label = _build_feature_label(candidate, mistral_7b_steering)
-        assert "effect=" in label
+    def test_labels_are_human_readable(self, mistral_7b_candidates, mistral_7b_steering):
+        """Labels should not contain snake_case or technical jargon."""
+        for c in mistral_7b_candidates["candidates"]:
+            label = _build_feature_label(c, mistral_7b_steering)
+            assert "_" not in label, f"Label contains underscore: {label}"
+            assert "d=" not in label, f"Label contains technical notation: {label}"
+            assert "effect=" not in label, f"Label contains technical notation: {label}"
 
 
 # ---------------------------------------------------------------------------

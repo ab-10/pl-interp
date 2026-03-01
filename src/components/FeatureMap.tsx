@@ -8,14 +8,14 @@ import { FeatureMapPoint } from "@/lib/types";
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 const VARIANT_COLORS: Record<string, string> = {
-  typed: "#22c55e",
-  control_flow: "#3b82f6",
-  error_handling: "#ef4444",
-  decomposition: "#f59e0b",
-  baseline: "#71717a",
-  invariants: "#a855f7",
-  functional_style: "#06b6d4",
-  recursion: "#ec4899",
+  typed: "#16a34a",
+  control_flow: "#2563eb",
+  error_handling: "#dc2626",
+  decomposition: "#d97706",
+  baseline: "#a1a1aa",
+  invariants: "#9333ea",
+  functional_style: "#0891b2",
+  recursion: "#db2777",
 };
 
 interface FeatureMapProps {
@@ -49,7 +49,7 @@ export default function FeatureMap({ points, selectedIds, onSelect }: FeatureMap
       name: variant,
       marker: {
         size: 4,
-        color: VARIANT_COLORS[variant] ?? "#71717a",
+        color: VARIANT_COLORS[variant] ?? "#a1a1aa",
         opacity: 0.6,
       },
       hoverinfo: "text" as const,
@@ -67,7 +67,7 @@ export default function FeatureMap({ points, selectedIds, onSelect }: FeatureMap
             name: "Selected",
             marker: {
               size: 12,
-              color: "#fbbf24",
+              color: "#f59e0b",
               symbol: "diamond" as const,
               opacity: 1,
               line: { color: "#ffffff", width: 1 },
@@ -88,18 +88,18 @@ export default function FeatureMap({ points, selectedIds, onSelect }: FeatureMap
         data={allTraces}
         layout={{
           paper_bgcolor: "transparent",
-          plot_bgcolor: "#18181b",
-          font: { color: "#a1a1aa", size: 10 },
+          plot_bgcolor: "#fafafa",
+          font: { color: "#71717a", size: 10 },
           margin: { t: 10, r: 10, b: 30, l: 30 },
           xaxis: {
             title: { text: "UMAP 1" },
-            gridcolor: "#27272a",
-            zerolinecolor: "#3f3f46",
+            gridcolor: "#e4e4e7",
+            zerolinecolor: "#d4d4d8",
           },
           yaxis: {
             title: { text: "UMAP 2" },
-            gridcolor: "#27272a",
-            zerolinecolor: "#3f3f46",
+            gridcolor: "#e4e4e7",
+            zerolinecolor: "#d4d4d8",
           },
           legend: {
             orientation: "h",

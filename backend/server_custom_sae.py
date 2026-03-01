@@ -106,32 +106,42 @@ feature_registry: dict[str, dict] = {}
 feature_map_data: dict | None = None
 
 
-def _build_feature_label(candidate: dict, steering_analysis: dict) -> str:
-    """Build a rich human-readable label for a feature using pipeline analysis.
+_PROPERTY_DISPLAY: dict[str, str] = {
+    "type_annotations": "Type Annotations",
+    "error_handling": "Error Handling",
+    "control_flow": "Control Flow",
+    "decomposition": "Decomposition",
+    "functional_style": "Functional Style",
+    "recursion": "Recursion",
+    "verbose_documentation": "Documentation",
+}
 
-    Uses monotonicity and effect size from steering_results.json when available,
-    falling back to basic Cohen's d label otherwise.
+
+def _display_name(prop: str) -> str:
+    return _PROPERTY_DISPLAY.get(prop, prop.replace("_", " ").title())
+
+
+def _build_feature_label(candidate: dict, steering_analysis: dict) -> str:
+    """Build a concise human-readable label for a feature.
 
     Examples:
-        "control_flow (monotonic, effect=+0.179, d=0.45)"
-        "error_handling (d=0.32)"
+        "Increases Control Flow"
+        "Decreases Type Annotations"
+        "Error Handling"  (non-monotonic or no steering data)
     """
     idx = str(candidate["feature_idx"])
     variant = candidate.get("primary_variant", "unknown")
-    cohens_d = candidate.get("cohens_d", 0)
 
-    # Try to find monotonicity data for this feature's steering direction
-    # Steering directions are keyed by feature_idx in steering_results
     mono_info = _find_monotonicity(idx, steering_analysis)
     if mono_info:
         prop_name, effect, is_mono = mono_info
-        tag = "monotonic" if is_mono else "non-monotonic"
-        # If the steered property differs from the selected variant, show both
-        if prop_name != variant:
-            return f"{variant} -> {prop_name} ({tag}, effect={effect:+.3f}, d={cohens_d:.2f})"
-        return f"{prop_name} ({tag}, effect={effect:+.3f}, d={cohens_d:.2f})"
+        display = _display_name(prop_name)
+        if is_mono:
+            direction = "Increases" if effect > 0 else "Decreases"
+            return f"{direction} {display}"
+        return display
 
-    return f"{variant} (d={cohens_d:.2f})"
+    return _display_name(variant)
 
 
 def _find_monotonicity(

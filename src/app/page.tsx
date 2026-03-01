@@ -27,7 +27,7 @@ import DensityRadar from "@/components/DensityRadar";
 const FeatureMap = dynamic(() => import("@/components/FeatureMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-64 items-center justify-center text-zinc-500 text-sm">
+    <div className="flex h-64 items-center justify-center text-zinc-400 text-sm">
       Loading feature map...
     </div>
   ),
@@ -146,24 +146,24 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-950">
+    <div className="flex h-screen flex-col bg-white">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-zinc-800/50 px-6 py-3">
+      <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3">
         <div className="flex items-center gap-3">
           <div className="h-6 w-6 rounded-md bg-gradient-to-br from-blue-500 to-violet-500" />
           <div>
-            <h1 className="text-sm font-semibold tracking-tight text-zinc-100">
+            <h1 className="text-sm font-semibold tracking-tight text-zinc-900">
               Feature Steering
             </h1>
-            <p className="text-[11px] text-zinc-500">
-              {modelName} · SAE · Layer {serverInfo?.steer_layer ?? "—"}
+            <p className="text-[11px] text-zinc-400">
+              {modelName} · SAE · Layer {serverInfo?.steer_layer ?? "\u2014"}
             </p>
           </div>
         </div>
         {serverInfo && (
           <div className="flex items-center gap-2">
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] text-zinc-500">Connected</span>
+            <span className="text-[11px] text-zinc-400">Connected</span>
           </div>
         )}
       </header>
@@ -175,8 +175,8 @@ export default function Home() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Left sidebar ─────────────────────────────────── */}
-        <aside className="flex w-72 flex-shrink-0 flex-col border-r border-zinc-800/50 bg-zinc-950">
+        {/* Left sidebar */}
+        <aside className="flex w-72 flex-shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/50">
           <div className="flex flex-col gap-5 overflow-y-auto p-4">
             <PromptInput
               value={prompt}
@@ -188,10 +188,10 @@ export default function Home() {
             {/* Temperature */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+                <label className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
                   Temperature
                 </label>
-                <span className="font-mono text-[11px] text-zinc-400">
+                <span className="font-mono text-[11px] text-zinc-500">
                   {temperature.toFixed(2)}
                 </span>
               </div>
@@ -206,7 +206,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="h-px bg-zinc-800/50" />
+            <div className="h-px bg-zinc-200" />
 
             {/* Features */}
             <FeaturePanel
@@ -228,10 +228,10 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* ── Main area ────────────────────────────────────── */}
-        <main className="flex flex-1 flex-col overflow-hidden bg-zinc-900/30">
+        {/* Main area */}
+        <main className="flex flex-1 flex-col overflow-hidden bg-white">
           {/* Tab bar */}
-          <div className="flex items-center gap-1 border-b border-zinc-800/50 px-4 pt-1">
+          <div className="flex items-center gap-1 border-b border-zinc-200 px-4 pt-1">
             {tabs
               .filter((t) => t.show)
               .map((t) => (
@@ -240,8 +240,8 @@ export default function Home() {
                   onClick={() => setActiveTab(t.key)}
                   className={`relative px-3 py-2 text-xs font-medium transition-colors ${
                     activeTab === t.key
-                      ? "text-zinc-100"
-                      : "text-zinc-500 hover:text-zinc-300"
+                      ? "text-zinc-900"
+                      : "text-zinc-400 hover:text-zinc-600"
                   }`}
                 >
                   {t.label}
@@ -251,24 +251,24 @@ export default function Home() {
                 </button>
               ))}
 
-            {/* Visualization toggles — right side of tab bar */}
+            {/* Visualization toggles */}
             {activeTab === "code" && (capabilities.token_activations || capabilities.alpha_sweep) && (
               <div className="ml-auto flex items-center gap-3">
                 {capabilities.token_activations && (
                   <label className="flex items-center gap-1.5 cursor-pointer group">
                     <div
                       className={`relative h-4 w-7 rounded-full transition-colors ${
-                        showHeatmap ? "bg-blue-600" : "bg-zinc-700"
+                        showHeatmap ? "bg-blue-500" : "bg-zinc-200"
                       }`}
                       onClick={() => setShowHeatmap(!showHeatmap)}
                     >
                       <div
-                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform ${
+                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
                           showHeatmap ? "translate-x-3.5" : "translate-x-0.5"
                         }`}
                       />
                     </div>
-                    <span className="text-[11px] text-zinc-500 group-hover:text-zinc-400">
+                    <span className="text-[11px] text-zinc-400 group-hover:text-zinc-600">
                       Heatmap
                     </span>
                   </label>
@@ -277,17 +277,17 @@ export default function Home() {
                   <label className="flex items-center gap-1.5 cursor-pointer group">
                     <div
                       className={`relative h-4 w-7 rounded-full transition-colors ${
-                        showSweep ? "bg-blue-600" : "bg-zinc-700"
+                        showSweep ? "bg-blue-500" : "bg-zinc-200"
                       }`}
                       onClick={() => setShowSweep(!showSweep)}
                     >
                       <div
-                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform ${
+                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
                           showSweep ? "translate-x-3.5" : "translate-x-0.5"
                         }`}
                       />
                     </div>
-                    <span className="text-[11px] text-zinc-500 group-hover:text-zinc-400">
+                    <span className="text-[11px] text-zinc-400 group-hover:text-zinc-600">
                       Sweep
                     </span>
                   </label>
@@ -298,16 +298,15 @@ export default function Home() {
 
           {/* Tab content */}
           <div className="flex-1 overflow-y-auto p-5">
-            {/* ── Code Tab ──────────────────────────────── */}
+            {/* Code Tab */}
             {activeTab === "code" && (
               <div className="flex flex-col gap-4">
                 {showSweep && result?.sweep_results && result.sweep_results.length > 0 ? (
                   <AlphaSweep
                     results={result.sweep_results}
+                    baselineText={result.baseline}
                     selectedIndex={selectedSweepIndex}
                     onIndexChange={setSelectedSweepIndex}
-                    activeFeatureIds={activeFeatureIds}
-                    showHeatmap={showHeatmap}
                   />
                 ) : showHeatmap && result?.token_activations && result.token_activations.length > 0 ? (
                   <TokenHeatmap
@@ -321,25 +320,15 @@ export default function Home() {
                     loading={loading}
                   />
                 )}
-
-                {(showHeatmap || showSweep) && result && (
-                  <div className="border-t border-zinc-800/50 pt-4">
-                    <ResultsPanel
-                      baseline={result.baseline}
-                      steered={result.steered}
-                      loading={false}
-                    />
-                  </div>
-                )}
               </div>
             )}
 
-            {/* ── Analysis Tab ──────────────────────────── */}
+            {/* Analysis Tab */}
             {activeTab === "analysis" && (
               <div className="flex flex-col gap-6">
                 {result?.baseline_density && result?.steered_density ? (
-                  <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-5">
-                    <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                    <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Property Density
                     </h3>
                     <DensityRadar
@@ -348,16 +337,16 @@ export default function Home() {
                     />
                   </div>
                 ) : (
-                  <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-zinc-800 bg-zinc-900/20">
-                    <p className="text-sm text-zinc-600">
+                  <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50">
+                    <p className="text-sm text-zinc-400">
                       Generate code to see property density analysis
                     </p>
                   </div>
                 )}
 
                 {result && (
-                  <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-5">
-                    <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                    <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Code Diff
                     </h3>
                     <ResultsPanel
@@ -370,19 +359,19 @@ export default function Home() {
               </div>
             )}
 
-            {/* ── Feature Space Tab ─────────────────────── */}
+            {/* Feature Space Tab */}
             {activeTab === "features" && (
               <div className="flex flex-col gap-4 h-full">
                 <div className="flex items-baseline justify-between">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                     Feature Space (UMAP)
                   </h3>
-                  <p className="text-[11px] text-zinc-600">
+                  <p className="text-[11px] text-zinc-400">
                     Click a feature to add it as a slider
                   </p>
                 </div>
                 {featureMapPoints ? (
-                  <div className="flex-1 min-h-[500px] rounded-lg border border-zinc-800/50 overflow-hidden">
+                  <div className="flex-1 min-h-[500px] rounded-lg border border-zinc-200 overflow-hidden">
                     <FeatureMap
                       points={featureMapPoints}
                       selectedIds={selectedFeatureIdSet}
@@ -390,8 +379,8 @@ export default function Home() {
                     />
                   </div>
                 ) : (
-                  <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-800 bg-zinc-900/20">
-                    <p className="text-sm text-zinc-600">
+                  <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50">
+                    <p className="text-sm text-zinc-400">
                       Feature map not available
                     </p>
                   </div>
