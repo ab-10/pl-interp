@@ -468,25 +468,25 @@ def generate(req: GenerateRequest):
         token_activations = None
         if capture_activations and active_feat_ids and captured_hidden_states:
             stacked = torch.cat(captured_hidden_states, dim=0)  # (n_tokens, d_model)
+            # Use sae.encode() to get full pre-activation latents for ALL features,
+            # not just top-k. This ensures we see activations for steered features
+            # even when they don't appear in the top-k sparse set.
             with torch.no_grad():
-                _x_hat, _topk_latents, sae_info = sae.forward(stacked)
-            topk_indices = sae_info["topk_indices"]  # (n_tokens, k)
-            topk_values = sae_info["topk_values"]    # (n_tokens, k)
+                all_latents = sae.encode(stacked)  # (n_tokens, d_sae)
 
             # Get generated token IDs (excluding prompt)
             generated_token_ids = gen_ids[0][prompt_len:].tolist()
             token_strings = tokenizer.convert_ids_to_tokens(generated_token_ids)
 
-            n_tokens = min(len(token_strings), topk_indices.shape[0])
+            active_feat_list = sorted(active_feat_ids)
+            n_tokens = min(len(token_strings), all_latents.shape[0])
             token_activations = []
             for pos in range(n_tokens):
-                pos_indices = topk_indices[pos].tolist()
-                pos_values = topk_values[pos].tolist()
-                # Check which active features fired at this position
                 active_at_pos = {}
-                for i, feat_idx in enumerate(pos_indices):
-                    if feat_idx in active_feat_ids:
-                        active_at_pos[str(feat_idx)] = pos_values[i]
+                for feat_idx in active_feat_list:
+                    val = all_latents[pos, feat_idx].item()
+                    if abs(val) > 1e-6:
+                        active_at_pos[str(feat_idx)] = round(val, 4)
                 token_activations.append({
                     "token": token_strings[pos],
                     "activations": active_at_pos,

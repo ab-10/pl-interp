@@ -33,6 +33,10 @@ export async function fetchFeatures(): Promise<EnrichedFeature[]> {
         category: v.category as "steering" | "control" | undefined,
         slider: v.slider as EnrichedFeature["slider"],
         monotonicity: v.monotonicity as EnrichedFeature["monotonicity"],
+        description: v.description as string | undefined,
+        llm_label: v.llm_label as string | undefined,
+        confidence: v.confidence as EnrichedFeature["confidence"],
+        code_examples: v.code_examples as EnrichedFeature["code_examples"],
       };
     });
   }

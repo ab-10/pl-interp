@@ -95,6 +95,15 @@ for LAYER in "${LAYERS[@]}"; do
       --layer "$LAYER"
     echo "$(date): Stage 5c complete (layer $LAYER)"
     echo ""
+
+    # --- Stage 5d: Label features with LLM ---
+    echo "$(date): === Stage 5d: Label features with LLM (layer $LAYER) ==="
+    python3 -m experiments.sae.label_features \
+      --model "$MODEL_NAME" \
+      --layer "$LAYER" \
+      --top-n 50
+    echo "$(date): Stage 5d complete (layer $LAYER)"
+    echo ""
 done
 
 # =====================================================================

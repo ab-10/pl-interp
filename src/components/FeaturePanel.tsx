@@ -69,6 +69,9 @@ export default function FeaturePanel({
           onChange={(v) => onStrengthChange(feature.id, v)}
           slider={feature.slider}
           sparkline={getBestSparkline(feature)}
+          description={feature.description}
+          confidence={feature.confidence}
+          codeExamples={feature.code_examples}
         />
       ))}
 
@@ -98,6 +101,9 @@ export default function FeaturePanel({
                   value={strengths[feature.id] ?? 0}
                   onChange={(v) => onStrengthChange(feature.id, v)}
                   slider={feature.slider}
+                  description={feature.description}
+                  confidence={feature.confidence}
+                  codeExamples={feature.code_examples}
                 />
               ))}
             </div>

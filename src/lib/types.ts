@@ -21,6 +21,14 @@ export interface GenerateResponse {
   steered: string;
 }
 
+// ── Code example from LLM feature labeling ──────────────────────
+
+export interface CodeExample {
+  task_id: string;
+  code_context: string;
+  activation: number;
+}
+
 // ── Enriched feature types ────────────────────────────────────────
 
 export interface SliderConfig {
@@ -52,6 +60,10 @@ export interface EnrichedFeature {
   slider?: SliderConfig;
   monotonicity?: Record<string, MonotonicityData>;
   logit_attribution?: LogitAttribution;
+  description?: string;
+  llm_label?: string;
+  confidence?: "high" | "medium" | "low";
+  code_examples?: CodeExample[];
 }
 
 // ── Token activation types ────────────────────────────────────────
