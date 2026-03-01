@@ -397,8 +397,8 @@ def main() -> int:
         help=f"Output directory for JSONL files (default: {config.STEERING_DIR})",
     )
     parser.add_argument(
-        "--alphas", type=str, default="3.0,-3.0",
-        help="Comma-separated alpha values (default: '3.0,-3.0')",
+        "--alphas", type=str, default="0.5,1.0,2.0,3.0,-0.5,-1.0,-2.0,-3.0",
+        help="Comma-separated alpha values (default: '0.5,1.0,2.0,3.0,-0.5,-1.0,-2.0,-3.0')",
     )
     parser.add_argument(
         "--steer-layer", type=int, default=config.CAPTURE_LAYER,

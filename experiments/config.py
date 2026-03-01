@@ -159,9 +159,9 @@ FAILURE_CATEGORIES = [
 ]
 
 # --- SAE ---
-SAE_NUM_FEATURES = 131_072  # 32x expansion (matches sae_lens baseline)
+SAE_NUM_FEATURES = 16_384  # 4x expansion (was 32x=131k; reduced to fix dead features)
 SAE_K = 64  # TopK sparsity: exactly K active features per token
-SAE_TRAINING_TOKENS = 5_000_000
+SAE_TRAINING_TOKENS = 10_000_000  # ~7 epochs over 1.4M unique tokens
 
 # --- Steering ---
 STEERING_NUM_FEATURES = 3
