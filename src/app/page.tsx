@@ -22,7 +22,11 @@ import ResultsPanel from "@/components/ResultsPanel";
 import ErrorBanner from "@/components/ErrorBanner";
 import TokenHeatmap from "@/components/TokenHeatmap";
 import AlphaSweep from "@/components/AlphaSweep";
-import DensityRadar from "@/components/DensityRadar";
+import ActivationMatrix from "@/components/ActivationMatrix";
+import ActivationTimeline from "@/components/ActivationTimeline";
+import ActivationDistribution from "@/components/ActivationDistribution";
+import CoActivationGraph from "@/components/CoActivationGraph";
+import LLMAnalysisTab from "@/components/LLMAnalysisTab";
 
 const FeatureMap = dynamic(() => import("@/components/FeatureMap"), {
   ssr: false,
@@ -33,7 +37,7 @@ const FeatureMap = dynamic(() => import("@/components/FeatureMap"), {
   ),
 });
 
-type Tab = "code" | "analysis" | "features";
+type Tab = "code" | "analysis" | "llm-analysis" | "features";
 
 const DEFAULT_CAPS: ServerCapabilities = {
   token_activations: false,
@@ -41,6 +45,7 @@ const DEFAULT_CAPS: ServerCapabilities = {
   feature_map: false,
   enriched_features: false,
   density: false,
+  llm_analysis: false,
 };
 
 const SWEEP_ALPHAS = [-2, -1, 0, 1, 2, 3];
@@ -77,6 +82,16 @@ export default function Home() {
     () => new Set(activeFeatureIds),
     [activeFeatureIds],
   );
+
+  const featureLabels = useMemo(() => {
+    const labels: Record<number, string> = {};
+    features.forEach((f) => { labels[f.id] = f.label; });
+    Object.keys(customStrengths).forEach((id) => {
+      const numId = Number(id);
+      if (!(numId in labels)) labels[numId] = `#${id}`;
+    });
+    return labels;
+  }, [features, customStrengths]);
 
   const modelName = serverInfo?.model?.split("/").pop() ?? "Model";
 
@@ -118,7 +133,7 @@ export default function Home() {
 
     try {
       const res = await generateCompletion(prompt, overrides, temperature, {
-        includeActivations: showHeatmap && capabilities.token_activations,
+        includeActivations: capabilities.token_activations,
         alphas: showSweep && capabilities.alpha_sweep ? SWEEP_ALPHAS : undefined,
       });
       setResult(res);
@@ -138,6 +153,11 @@ export default function Home() {
   const tabs: { key: Tab; label: string; show: boolean }[] = [
     { key: "code", label: "Code", show: true },
     { key: "analysis", label: "Analysis", show: true },
+    {
+      key: "llm-analysis",
+      label: "LLM Analysis",
+      show: capabilities.llm_analysis || features.some((f) => f.code_examples && f.code_examples.length > 0),
+    },
     {
       key: "features",
       label: "Feature Space",
@@ -338,36 +358,94 @@ export default function Home() {
             {/* Analysis Tab */}
             {activeTab === "analysis" && !loading && (
               <div className="flex flex-col gap-6">
-                {result?.baseline_density && result?.steered_density ? (
-                  <div className="rounded-lg border border-zinc-200 bg-white p-5">
-                    <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-400">
-                      Property Density
-                    </h3>
-                    <DensityRadar
-                      baselineDensity={result.baseline_density}
-                      steeredDensity={result.steered_density}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50">
-                    <p className="text-sm text-zinc-400">
-                      Generate code to see property density analysis
-                    </p>
-                  </div>
-                )}
+                {result?.token_activations && result.token_activations.length > 0 && activeFeatureIds.length > 0 ? (
+                  <>
+                    {/* Activation Matrix */}
+                    <section className="rounded-lg border border-zinc-200 bg-white p-5">
+                      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                        Activation Matrix
+                      </h3>
+                      <p className="mb-3 text-[11px] text-zinc-400">
+                        Per-token activation intensity for each steered feature. Brighter = stronger activation.
+                      </p>
+                      <ActivationMatrix
+                        tokens={result.token_activations}
+                        featureIds={activeFeatureIds}
+                        featureLabels={featureLabels}
+                      />
+                    </section>
 
-                {result && (
-                  <div className="rounded-lg border border-zinc-200 bg-white p-5">
-                    <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-zinc-400">
-                      Code Diff
-                    </h3>
-                    <ResultsPanel
-                      baseline={prompt + result.baseline}
-                      steered={prompt + result.steered}
-                      loading={false}
-                    />
+                    {/* Activation Timeline */}
+                    <section className="rounded-lg border border-zinc-200 bg-white p-5">
+                      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                        Activation Timeline
+                      </h3>
+                      <p className="mb-3 text-[11px] text-zinc-400">
+                        How feature activations evolve as the model generates each token.
+                      </p>
+                      <ActivationTimeline
+                        tokens={result.token_activations}
+                        featureIds={activeFeatureIds}
+                        featureLabels={featureLabels}
+                      />
+                    </section>
+
+                    {/* Distribution + Co-Activation side by side */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <section className="rounded-lg border border-zinc-200 bg-white p-5">
+                        <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                          Activation Distribution
+                        </h3>
+                        <p className="mb-3 text-[11px] text-zinc-400">
+                          How each feature&apos;s activations are distributed across tokens.
+                        </p>
+                        <ActivationDistribution
+                          tokens={result.token_activations}
+                          featureIds={activeFeatureIds}
+                          featureLabels={featureLabels}
+                        />
+                      </section>
+
+                      <section className="rounded-lg border border-zinc-200 bg-white p-5">
+                        <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                          Feature Co-Activation
+                        </h3>
+                        <p className="mb-3 text-[11px] text-zinc-400">
+                          Correlation between feature activation patterns. Blue = fire together, red = inverse.
+                        </p>
+                        <CoActivationGraph
+                          tokens={result.token_activations}
+                          featureIds={activeFeatureIds}
+                          featureLabels={featureLabels}
+                        />
+                      </section>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50">
+                    <div className="text-center">
+                      <p className="text-sm text-zinc-400">
+                        {!result
+                          ? "Generate code to see activation analysis"
+                          : activeFeatureIds.length === 0
+                            ? "Adjust feature sliders to see activation analysis"
+                            : "No activation data available — server may not support token activations"}
+                      </p>
+                      {!result && (
+                        <p className="text-[11px] text-zinc-300 mt-1">
+                          Activation data is captured automatically when generating
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* LLM Analysis Tab */}
+            {activeTab === "llm-analysis" && (
+              <div className="h-full">
+                <LLMAnalysisTab features={features} />
               </div>
             )}
 

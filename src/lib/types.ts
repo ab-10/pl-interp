@@ -121,6 +121,17 @@ export interface ServerCapabilities {
   feature_map: boolean;
   enriched_features: boolean;
   density: boolean;
+  llm_analysis: boolean;
+}
+
+// ── LLM Analysis types ──────────────────────────────────────────
+
+export interface RelabelResponse {
+  feature_id: number;
+  label: string;
+  description: string;
+  confidence: string;
+  prompt_used: string;
 }
 
 export interface ServerInfo {

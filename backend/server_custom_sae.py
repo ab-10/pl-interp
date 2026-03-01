@@ -38,6 +38,12 @@ import sys
 # Add project root so experiments package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from experiments.sae.labeling_utils import (
+    BEDROCK_REGION,
+    build_labeling_prompt,
+    call_bedrock,
+    parse_label_response,
+)
 from experiments.sae.model import TopKSAE
 from experiments.steering.hook import make_steering_hook
 # Inline density computation to avoid deep import chain from analyze_steering
@@ -96,6 +102,12 @@ class GenerateRequest(BaseModel):
     alphas: list[float] | None = None
 
 
+class RelabelRequest(BaseModel):
+    feature_id: int
+    custom_prompt: str | None = None
+    update_registry: bool = False
+
+
 # ---------------------------------------------------------------------------
 # Global state
 # ---------------------------------------------------------------------------
@@ -105,6 +117,7 @@ tokenizer: AutoTokenizer | None = None
 sae: TopKSAE | None = None
 feature_registry: dict[str, dict] = {}
 feature_map_data: dict | None = None
+bedrock_client = None  # Lazy-initialized on first /relabel_feature call
 
 
 _PROPERTY_DISPLAY: dict[str, str] = {
@@ -331,6 +344,7 @@ def get_info():
             "feature_map": bool(FEATURE_MAP),
             "enriched_features": True,
             "density": True,
+            "llm_analysis": bool(FEATURE_LABELS),
         },
     }
 
@@ -341,6 +355,71 @@ def get_feature_map():
     if feature_map_data is None:
         raise HTTPException(status_code=404, detail="Feature map not available")
     return feature_map_data
+
+
+@app.get("/default_labeling_prompt/{feature_id}")
+def get_default_labeling_prompt(feature_id: int):
+    """Return the default LLM labeling prompt for a feature (no Bedrock call)."""
+    fid_str = str(feature_id)
+    if fid_str not in feature_registry:
+        raise HTTPException(status_code=404, detail=f"Feature {feature_id} not in registry")
+    entry = feature_registry[fid_str]
+    code_examples = entry.get("code_examples", [])
+    if not code_examples:
+        raise HTTPException(status_code=400, detail=f"Feature {feature_id} has no code_examples")
+    prompt = build_labeling_prompt(feature_id, code_examples)
+    return {"feature_id": feature_id, "prompt": prompt}
+
+
+@app.post("/relabel_feature")
+def relabel_feature(req: RelabelRequest):
+    """Re-label a feature using Claude on Bedrock with optional custom prompt."""
+    global bedrock_client
+
+    fid_str = str(req.feature_id)
+    if fid_str not in feature_registry:
+        raise HTTPException(status_code=404, detail=f"Feature {req.feature_id} not in registry")
+
+    entry = feature_registry[fid_str]
+    code_examples = entry.get("code_examples", [])
+    if not code_examples:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Feature {req.feature_id} has no code_examples for labeling",
+        )
+
+    # Build prompt
+    if req.custom_prompt is not None:
+        prompt = req.custom_prompt
+    else:
+        prompt = build_labeling_prompt(req.feature_id, code_examples)
+
+    # Lazy-init Bedrock client
+    if bedrock_client is None:
+        import boto3
+        bedrock_client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+
+    # Call Bedrock
+    try:
+        response_text = call_bedrock(bedrock_client, prompt)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Bedrock call failed: {e}")
+
+    parsed = parse_label_response(response_text)
+
+    # Optionally update in-memory registry
+    if req.update_registry:
+        entry["llm_label"] = parsed["label"]
+        entry["description"] = parsed["description"]
+        entry["confidence"] = parsed["confidence"]
+
+    return {
+        "feature_id": req.feature_id,
+        "label": parsed["label"],
+        "description": parsed["description"],
+        "confidence": parsed["confidence"],
+        "prompt_used": prompt,
+    }
 
 
 def _compute_activation_stats(

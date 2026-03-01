@@ -3,6 +3,7 @@ import {
   EnrichedGenerateResponse,
   FeatureMapPoint,
   FeatureOverride,
+  RelabelResponse,
   ServerInfo,
 } from "./types";
 
@@ -84,6 +85,43 @@ export async function fetchServerInfo(): Promise<ServerInfo | null> {
   } catch {
     return null;
   }
+}
+
+/** Fetch the default labeling prompt for a feature. */
+export async function fetchDefaultPrompt(
+  featureId: number,
+): Promise<{ feature_id: number; prompt: string } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/default_labeling_prompt/${featureId}`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Re-label a feature using Bedrock LLM. */
+export async function relabelFeature(
+  featureId: number,
+  customPrompt?: string,
+  updateRegistry: boolean = false,
+): Promise<RelabelResponse> {
+  const body: Record<string, unknown> = {
+    feature_id: featureId,
+    update_registry: updateRegistry,
+  };
+  if (customPrompt !== undefined) body.custom_prompt = customPrompt;
+
+  const res = await fetch(`${API_BASE}/relabel_feature`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(detail.detail || `Relabel failed: ${res.statusText}`);
+  }
+  return res.json();
 }
 
 /** Fetch pre-computed UMAP feature map. Returns null if unavailable. */
