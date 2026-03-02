@@ -1,6 +1,5 @@
 # Environment
 
-You are running inside a Docker container.
-
-- Run applications on port **3000** (the container port).
-- When telling the user how to access the app, use **localhost:3000** (the host port mapped to container port 3000).
+- Next.js frontend runs on port **3001** locally (port 3000 is occupied by another project).
+- Start with: `BACKEND_URL=http://localhost:8001 npm run dev -- -p 3001`
+- Backend is on a remote GPU VM, accessed via SSH tunnel on port **8001**.

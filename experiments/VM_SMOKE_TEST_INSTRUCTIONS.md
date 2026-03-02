@@ -88,7 +88,7 @@ wait
 ## Troubleshooting
 
 - **"CUDA is not available"**: Check `nvidia-smi`, verify PyTorch was installed with CUDA support.
-- **Sanity check 1 fails (hidden state mismatch)**: Model architecture mismatch — verify we're loading `mistralai/Mistral-7B-Instruct-v0.3`, not a different version.
+- **Sanity check 1 fails (hidden state mismatch)**: Model architecture mismatch — verify the correct model is loaded for the `--model` preset.
 - **Sanity check 4 fails (steering hook)**: The `MistralDecoderLayer` output format may have changed in a transformers update. Check that `output[0]` is the hidden states tensor.
 - **Sanity check 5 fails (token round-trip)**: Tokenizer version mismatch. Ensure `transformers` version matches between vLLM and HF.
 - **Full E2E hangs on vLLM init**: vLLM may be trying to use more GPU memory than available. Try `--gpu-memory-utilization 0.8` in the VLLMRunner or check if another process is using the GPU.

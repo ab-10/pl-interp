@@ -1,8 +1,11 @@
 # Plan: Milestone 2 — Feature Discovery
 
+> **Status:** Completed. Results in `FEATURE_DISCOVERY_RESULTS.md` and `results/v0-RESULTS.md`.
+> Scripts moved to `experiments/scripts/`. Pipeline ran on 2x H100 VMs (box-4 for Mistral-7B, box-5 for Ministral-8B).
+
 ## Context
 
-Milestone 1 is complete. Scripts live in `scripts/` and run on the GPU VM under `conda activate steering`. The VM has **95 × H100 (80 GB)** instances available.
+Milestone 1 is complete. Scripts live in `experiments/scripts/` and run on the GPU VMs under `conda activate steering`.
 
 ---
 
@@ -16,7 +19,7 @@ Milestone 1 is complete. Scripts live in `scripts/` and run on the GPU VM under 
 
 ## Scripts
 
-### `scripts/requirements.txt`
+### `experiments/requirements.txt`
 ```
 datasets
 mistralai
@@ -26,7 +29,7 @@ accelerate
 
 ---
 
-### `scripts/00_explore_sae.py` *(new)*
+### `experiments/scripts/00_explore_sae.py` *(completed)*
 
 **Purpose:** Before running any feature discovery, characterize the SAE so downstream decisions (K, batch size, steering strength) are grounded in data rather than guesses.
 
@@ -44,7 +47,7 @@ accelerate
 
 ---
 
-### `scripts/config.py` *(new, shared constants)*
+### `experiments/config.py` *(shared constants)*
 ```python
 # Set after reviewing 00_explore_sae.py output
 TOP_K = 50                  # features recorded per prompt — revisit if L0 < 10
@@ -70,7 +73,7 @@ This is a starting estimate. Run `scripts/00_explore_sae.py` first and adjust if
 
 ---
 
-### `scripts/01_collect_activations.py`
+### `experiments/scripts/01_collect_activations.py`
 
 **Purpose:** Run code and non-code prompts through Mistral 7B in parallel across all 95 H100s, extract layer 16 SAE activations, record top-K firing features per prompt.
 
@@ -130,7 +133,7 @@ for batch in chunked(prompts_for_this_gpu, BATCH_SIZE_PER_GPU):
 
 ---
 
-### `scripts/02_find_code_features.py`
+### `experiments/scripts/02_find_code_features.py`
 
 **Purpose:** Differential analysis — find features that fire strongly and consistently on code across *multiple languages*, but not on plain prose.
 
@@ -145,7 +148,7 @@ for batch in chunked(prompts_for_this_gpu, BATCH_SIZE_PER_GPU):
 
 ---
 
-### `scripts/03_label_features.py`
+### `experiments/scripts/03_label_features.py`
 
 No changes to the core logic. One addition: include the **language distribution** of activating examples in the Mistral prompt, so the label reflects cross-language generality where applicable.
 
@@ -165,7 +168,7 @@ Respond with a short label (3-7 words) and a one-sentence description."""
 
 ---
 
-### `scripts/04_verify_steering.py`
+### `experiments/scripts/04_verify_steering.py`
 
 **Purpose:** Automated directional verification using **Claude Opus** (`claude-opus-4-6`) as the judge, replacing manual review.
 
@@ -253,23 +256,20 @@ Add a quick `00b_inspect_contrast.py` that prints:
 
 | File | Purpose |
 |---|---|
-| `scripts/config.py` | Shared constants (K, batch size, steering strengths, model names) |
-| `scripts/requirements.txt` | Additional VM Python deps |
-| `scripts/00_explore_sae.py` | Characterize SAE before committing to parameters |
-| `scripts/00b_inspect_contrast.py` | Validate contrast set quality before running pipeline |
-| `scripts/01_collect_activations.py` | Parallel activation collection across 95 H100s |
-| `scripts/02_find_code_features.py` | Differential + cross-language feature ranking |
-| `scripts/03_label_features.py` | Mistral API auto-labeling with language context |
-| `scripts/04_verify_steering.py` | Strength sweep + Claude Opus judge |
+| `experiments/config.py` | Shared constants (model registry, layers, batch size, steering strengths) |
+| `experiments/requirements.txt` | VM Python deps |
+| `experiments/scripts/00_sanity_check.py` | GPU setup validation + micro E2E |
+| `experiments/scripts/01_generate.py` | Code generation with vLLM (sharded) |
+| `experiments/scripts/02_evaluate.py` | Test execution + failure classification |
+| `experiments/scripts/03_capture_activations.py` | Layer activation capture via teacher-forcing |
+| `experiments/scripts/run_stages_4_7.sh` | SAE training, feature analysis, steering (multi-model) |
 
 ---
 
 ## Verification Sequence
 
-1. Run `00_explore_sae.py` → review SAE profile, update `config.py`
-2. Run `00b_inspect_contrast.py` → validate and clean contrast set
-3. `torchrun --nproc_per_node=95 01_collect_activations.py`
-4. Run `02_find_code_features.py` → inspect differential scores and cross-language consistency
-5. Run `03_label_features.py` → review that labels are interpretable
-6. Run `04_verify_steering.py` → inspect judge verdicts; a feature is "verified" if Claude Opus rates directional shift ≥3/5 at any tested strength while coherence remains intact
-7. If fewer than 5 features pass verification → trigger pivot discussion per README
+1. Run `00_sanity_check.py` → validate GPU setup, hooks, token round-trips
+2. Run stages 1-3 (generate → evaluate → capture activations) with 2 GPU shards
+3. Run `run_stages_4_7.sh` → SAE training, feature candidates, steering
+4. Review `feature_candidates.json` and `steering_results.json` in analysis dir
+5. Results for Mistral-7B in `results/v0-RESULTS.md`, Ministral-8B on box-5

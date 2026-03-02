@@ -713,9 +713,23 @@ iteration tooling, TL/SAELens can be reintroduced. The activation data format (f
 - Layer 18: All positive alphas degrade. α=3.0 gives -18.3% (p=0.0013). Direction points pass→fail.
 - Layer 27: Mild degradation at positive alphas. α=-1.5 gives +1.2% (only positive delta). Suggests inversion.
 
-### Probe Steering (flipped direction) — in progress
-- Testing negated probe direction on layer 27
-- Hypothesis: flipping should make positive alphas push toward passing
+### Probe Steering (flipped direction, HumanEval)
+- Layer 27, negated direction, alphas [0.5, 1.0, 1.5, 3.0, -1.5]
+- Best: α=1.5 → +1.2% (p=0.91, n=164). Right trend but not significant.
+
+### Probe Steering (flipped direction, MBPP)
+- Layer 27, negated direction, alphas [0.5, 1.0, 1.5]
+- Baseline: 38.0% (370/974)
+- Best: α=0.5 → +0.4% (p=0.89, n=974). Near-zero with 6× more data.
+
+### Activation Patching (direction clamping)
+- Clamp layer 27's projection onto probe direction to calibrated pass/fail targets
+- Pass projection mean: ~-0.58, Fail projection mean: ~-0.96, Cohen's d ≈ 0.72
+- Clamp to pass mean: -0.6% combined (n=164) — no improvement
+- Clamp to fail mean: +0.0% combined — no degradation
+- Zero direction: -3.0% — slight noise from removing information, not directional
+- Only 2-6 tasks change outcome in any condition (out of 164)
+- **Conclusion: probe direction is a readout, not a control signal.** Layer 27 encodes pass/fail information (0.87 AUC) but intervening on it does not change outcomes.
 
 ### Previous attempts
 - 131k SAE: 83% dead features, universal degradation
