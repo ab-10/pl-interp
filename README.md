@@ -1,223 +1,286 @@
-# LLM PL Understanding
+# Steering Code Generation with Sparse Autoencoders
 
-**Target demo:** interface for modifying LLM features responsible for code generation properties.
+**Can we find individual neurons inside an LLM that control *how* it writes code — and then turn them up or down like sliders?**
 
-Final deliverable:
+We opened up Ministral 8B, trained custom Sparse Autoencoders on code, and found 30 verified features that let us toggle specific coding behaviors: type annotations, recursion, error handling, functional style, and documentation verbosity. Then we built a web UI to steer the model in real time.
 
-1. Running mistral model
-2. SAE for identifying relevant features
-3. Identified feature(s) related to code
-4. Web UI for amplifying/decreasing the feature
+## The Headline Result
 
-POC: mistral 7B w/ existing SAE
+Same prompt. Same model. Different feature activations:
 
-VM access:
-`ssh -i ~/.ssh/id_rsa azureuser@20.38.0.252`
+```
+Prompt: "Write a Python function that merges two sorted lists."
+```
 
+**Baseline** (no steering) — iterative two-pointer merge:
+```python
+def merge_sorted_lists(list1, list2):
+    merged_list = []
+    i, j = 0, 0
+    while i < len(list1) and j < len(list2):
+        ...
+```
 
-1. open-weight Mistral 7B locally for the steered generation (where you need hooks)
-2. **Mistral API** for everything that benefits from a smarter, faster model — feature labeling and prompt processing.
+**Type Annotations feature ON** (+3.0) — adds `from typing import List`, full signatures:
+```python
+from typing import List
 
+def merge_sorted_lists(list1: List[int], list2: List[int]) -> List[int]:
+    merged_list: List[int] = []
+    i: int = 0
+    j: int = 0
+    ...
+```
 
-## Stack
+**Recursion feature ON** (+3.0) — completely restructures the algorithm:
+```python
+def merge_sorted_lists(list1, list2):
+    if not list1:
+        return list2
+    if not list2:
+        return list1
+    if list1[0] < list2[0]:
+        return [list1[0]] + merge_sorted_lists(list1[1:], list2)
+    else:
+        return [list2[0]] + merge_sorted_lists(list1, list2[1:])
+```
 
-| Component | New | Notes |
+The model isn't being re-prompted — the same neural pathway is activated differently. We're reaching into the model's intermediate representations and amplifying the direction that encodes "use recursion" or "add type annotations."
+
+---
+
+## What We Learned About Mistral
+
+### 1. Code properties are encoded as separable directions in activation space
+
+The model doesn't store "type annotations" and "recursion" in the same tangled mess. At layer 18 (50% depth in Ministral 8B's 36-layer architecture), these properties decompose into distinct SAE features with minimal cross-contamination:
+
+| Property | Best Feature | Specificity | Diff Score | Effect |
+|---|---|---|---|---|
+| **Type annotations** | L18:13176 | **1,499x** | 1.40 | Adds `List[int]`, `-> bool`, `from typing import` |
+| **Functional style** | L18:16149 | **11.6x** | 2.13 | Switches to `map()`, `filter()`, `lambda` |
+| **Recursive patterns** | L18:16290 | 1.5x | 1.61 | Rewrites iterative code as recursive |
+| **Verbose comments** | L18:9344 | **5.6x** | 0.89 | Adds inline documentation to every block |
+| **Error handling** | L18:9742 | 1.5x | 1.02 | Introduces `try`/`except` patterns |
+
+Feature 13176 fires on 41% of tokens during typed code generation and on 0.03% during untyped code — a 1,499x specificity ratio. This isn't a noisy correlate. It's a genuine "typing" direction in the model's representation.
+
+### 2. Community SAEs fail on domain-specific tasks — custom training is essential
+
+We started with a widely-used community SAE for Mistral 7B (`tylercosgrove/mistral-7b-sparse-autoencoder-layer16`). It completely failed:
+
+| | Community SAE | Our Custom SAE |
 |---|---|---|
-| Steered model | `mistralai/Mistral-7B-Instruct-v0.1` | Local, open weights (Apache 2.0) |
-| SAE | `tylercosgrove/mistral-7b-sparse-autoencoder-layer16` | Community-trained, SAELens-compatible, layer 16 only |
-| Feature labeling | **Mistral API** (`mistral-medium` or `mistral-small`) | Auto-interp pipeline |
-| Code prompt understanding | **Mistral API** or **Codestral API** | Suggest relevant features for a given prompt |
+| Dead features | **80%** (104,821/131K) | 52% (17,125/32K) |
+| Sparsity | Fixed 128 per token | Variable (mean 102, range 23-777) |
+| Training data | Pile (general text) | **StarCoderData (code)** |
+| Hook point | MLP output | **Residual stream** |
+| Architecture | TopK | **BatchTopK** |
+| Steering at +5 for typing | Zero type annotations | **Full typed signatures** |
+| Steering at +500 for typing | Still zero. Then gibberish. | N/A — works at +3 |
 
-# Milestones
+The community SAE's "type annotation" features actually encoded *language identity* (Python vs TypeScript), not the presence of types. Boosting them switched the model to JavaScript — but still without any type annotations. Our code-trained SAE found the actual typing direction.
 
-## Basic Setup
+### 3. Detection and generation use different feature circuits
 
-**Status:** done
+A key finding from our analysis: features that *detect* a property in input don't necessarily *cause* that property in output. The community SAE found features that fired when reading typed code, but adding their decoder vectors during generation had zero effect.
 
-**Delivery criteria:**
-1. Drivers installed on the GPU VM
-2. Can run Steered model and SAE on the VM
-3. Verify steering works with a **directional check** — amplifying a feature should produce an expected directional shift in output (e.g., boosting an "error handling" feature should yield more try/catch blocks), not just any difference
+Our generation-based discovery method (the "Cosgrove Method 3") solved this by measuring activations *during generation*, not during reading. We generated typed and untyped code from the same prompts, then found features that differentially fired during the generation of typed tokens. These features steer generation because they're part of the generative circuit, not the comprehension circuit.
 
-**Steps:**
-1. Install NVIDIA drivers + CUDA on the GPU VM
-2. Install miniconda, create Python env
-3. Install PyTorch (CUDA 12), transformer_lens, sae_lens, mistralai
-4. Download Mistral 7B + the Tyler Cosgrove SAE
-5. Run a test: forward pass through model, encode with SAE, apply a steering hook, generate output — all in a Python script directly on the VM
+### 4. Multi-layer analysis reveals feature specialization by depth
 
-## Feature Discovery
+We trained SAEs at both layer 18 (50% depth) and layer 27 (75% depth) of Ministral 8B:
 
-**Status:** not started
+- **Layer 18 features** encode *structural intent* — "use recursion," "add type annotations," "write functional code." These are planning-level representations.
+- **Layer 27 features** encode *output refinement* — they overlap more across properties and act more like "how to format this output" than "what kind of code to write."
 
-**Delivery criteria:**
-1. Collect top firing features for code prompts using an **existing dataset** (The Stack, HumanEval, or similar) — no manual prompt curation
-2. Label the features (using Mistral API)
-3. Verify that adjusting the features, meaningfully changes code generation performance
+The sharpest features live at 50% depth. This aligns with the "semantic bottleneck" hypothesis — mid-network layers compress input into abstract representations before the model commits to specific output tokens.
 
-**Note:** Tight deadline — if layer 16 is too sparse on code features, there is no time for custom SAE training. Pivot options should be evaluated early.
+### 5. Every prompt variant hurts correctness
 
-**Implementation discrepancies vs `FEATURE_DISCOVERY_v2.md`:**
-- Scripts use **single-GPU sequential** processing (plan), not `torchrun` multi-GPU (v2). VM has 2 H100s, not 95.
-- Uses **HumanEval via MultiPL-E** (8 languages, ~1,280 prompts) instead of HumanEval-only.
-- Steering verification uses **side-by-side print output**, not Claude Opus LLM-as-judge. No `anthropic` dependency.
-- No `00_explore_sae.py`, `00b_inspect_contrast.py`, or `config.py` — added in v2 but not in approved plan.
-- Differential score formula: `code_freq * code_mean - noncode_freq * noncode_mean` (additive), not the ratio formula from v2.
+We ran the full pipeline on HumanEval + MBPP with 6 prompt variants (baseline, typed, error_handling, decomposition, invariants, control_flow) across both Mistral 7B and Ministral 8B:
 
-## Feature Steering CLI
+| Variant | Ministral 8B Pass Rate | Delta |
+|---|---|---|
+| **Baseline** | **36.8%** | — |
+| Typed | 35.3% | -1.5 |
+| Control flow | 34.1% | -2.7 |
+| Error handling | 33.8% | -3.0 |
+| Invariants | 33.9% | -2.9 |
+| **Decomposition** | **28.6%** | **-8.2** |
 
-**Status:** not started
+Asking the model to add structure (types, error handling, decomposition) consistently *reduces* correctness. Decomposition — "use helper functions" — is the most harmful at -8pp. The model's correctness and structure are in tension, not alignment.
 
-**Delivery criteria:**
-1. A CLI version of the final web interface implemented
-2. Allows specifying the features and seeing how generated code changes by toggling features on/off
-    **Target behavior:** enabling features, leads to meaningful differences in the relevant code generation behavior.
+---
 
-## Feature Steering Web App
+## Architecture
 
-**Status:** not started
-
-**Delivery criteria:**
-1. A NextJS web app with a connected backend
-2. User can select the features they want to boost/decrease the performance of
-3. There's a textbox for entering a code generation prompt
-4. Mistral model runs and generates output based on user's prompt and specified boosting features
-5. The model runs on a GPU VM
-    I have shell access, we can set it up together.
-
-**Note:** Architecture (local Next.js + SSH tunnel vs. everything on VM) is **undecided** — will be determined when we reach this milestone.
-
-
-# Claude Code notes
-
-## Phase 1: Feature Discovery for Code (Updated)
-
-Since you're limited to a single layer (16 of 32), you need to be **strategic** about finding code-relevant features within it. The process:
-
-**Step 1 — Find firing features on code inputs:**
-```python
-from transformer_lens import HookedTransformer
-from sae_lens import SAE
-
-model = HookedTransformer.from_pretrained_no_processing("mistral-7b-instruct")
-sae = SAE.from_pretrained(
-    release="tylercosgrove/mistral-7b-sparse-autoencoder-layer16",
-    sae_id="mistral-7b-sparse-autoencoder-layer16",
-    device="cuda"
-)
-
-# Run code samples through and collect which features fire
-code_prompts = [
-    "def sort_list(items: List[int]) -> List[int]:",
-    "public class Calculator { private int value;",
-    "try:\n    result = x / y\nexcept ZeroDivisionError:",
-    # ... 50+ varied code examples
-]
-
-feature_activations = {}  # feature_idx -> list of (prompt, activation_value)
-for prompt in code_prompts:
-    _, cache = model.run_with_cache(prompt)
-    acts = cache["blocks.16.hook_resid_post"]
-    feature_acts = sae.encode(acts)
-    # Record top-firing features for this prompt
-    top_features = feature_acts.topk(20).indices.tolist()
-    for f in top_features:
-        feature_activations.setdefault(f, []).append(prompt)
+```
+                    ┌─────────────────────────────┐
+                    │     Next.js Frontend         │
+                    │  Feature sliders + diff view │
+                    │  Activation visualizations   │
+                    │  Alpha sweep comparisons     │
+                    └──────────┬──────────────────┘
+                               │ REST API
+                    ┌──────────▼──────────────────┐
+                    │     FastAPI Backend          │
+                    │  /generate  /analyze  /info  │
+                    └──────────┬──────────────────┘
+                               │ PyTorch hooks
+              ┌────────────────▼────────────────────┐
+              │        Ministral 8B (bfloat16)       │
+              │   Layer 18 ← steering hook injects   │
+              │   SAE decoder direction × strength   │
+              └────────────────┬────────────────────┘
+                               │
+              ┌────────────────▼────────────────────┐
+              │      Custom BatchTopK SAE            │
+              │  16,384 features, k=64               │
+              │  Trained on StarCoderData             │
+              │  Layers 18 + 27 of Ministral 8B       │
+              └─────────────────────────────────────┘
 ```
 
-**Step 2 — Auto-label with Mistral API:**
-```python
-import mistralai
+**Steering mechanism:** During autoregressive generation, a forward hook on layer 18 adds `strength * W_dec[feature_idx]` to the residual stream at each decode step. The hook fires only during single-token decode, leaving prompt prefill unmodified. This is the standard SAE steering approach — the decoder vector points in the direction the model "moves" when a feature is active, and amplifying it makes the model move more in that direction.
 
-client = mistralai.Mistral(api_key=MISTRAL_API_KEY)
+---
 
-def label_feature(feature_idx, activating_examples):
-    prompt = f"""These code snippets all strongly activate a specific internal feature of a language model.
-What concept or pattern does this feature likely represent?
+## The Discovery Pipeline
 
-Examples:
-{chr(10).join(activating_examples[:10])}
+Finding features that actually steer (not just detect) is the hard part. Our pipeline:
 
-Respond with a short label (3-7 words) and a one-sentence description."""
-    
-    response = client.chat.complete(
-        model="mistral-medium-latest",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
+```
+1. GENERATE        Ministral 8B produces code with and without target properties
+   5 prompt pairs per property, 300 tokens each, temperature 0.3
+                            ↓
+2. CAPTURE          Forward pass through generated outputs, capture layer 18 + 27
+   activations     residual stream via PyTorch hooks
+                            ↓
+3. ENCODE           SAE encodes each token position → 16,384-dim sparse activations
+                    Per-token, NOT mean-pooled (preserves positional signal)
+                            ↓
+4. RANK             Differential score = target_freq × target_act − control_freq × control_act
+                    Filter: diff > 0, cross-prompt frequency ≥ 0.4
+                    Take top 5 per layer per property → 50 candidates
+                            ↓
+5. VERIFY           Steer generation on 3 neutral prompts at strengths 3, 5, 8
+                    Pass criteria: property visible, output coherent, effect on ≥ 2/3 prompts
+                    → 30 verified features shipped to the web UI
 ```
 
-This gives you a curated, auto-labeled feature registry — built entirely from Mistral models, which is the story you want to tell.
+Runtime: ~36 minutes on one H100.
+
+### Why generation-based discovery matters
+
+Earlier approaches tried finding code features by running code *inputs* through the model and seeing which features fire. This finds detection features — features that recognize code patterns. But detection ≠ generation. A feature that fires when the model *reads* `List[int]` may have nothing to do with *writing* `List[int]`.
+
+Our method captures activations during the model's own generation, comparing generations that exhibit the target property against matched generations that don't. Features found this way are part of the generation circuit by construction.
 
 ---
 
-## Phase 2: Steering Backend (Updated)
+## The Full Experimental Journey
 
-Layer 16 is actually a reasonable layer for this — it's in the middle-to-late portion of Mistral 7B's 32 layers, where more semantic/behavioral features tend to live (earlier layers capture syntax, later layers capture high-level behavior).
+### Round 1: Community SAE on Mistral 7B (failed)
 
-```python
-from functools import partial
+Started with `tylercosgrove/mistral-7b-sparse-autoencoder-layer16`. Profiled it: 80% dead features, TopK-128 constant sparsity, MLP-output hook point, trained on general text. Found 20 features via differential analysis on 1,278 code prompts across 8 languages. Every feature labeled by Mistral API as "code stub format" — they were detecting the HumanEval prompt structure, not code properties.
 
-def make_steering_hook(sae, feature_indices_and_strengths):
-    """
-    feature_indices_and_strengths: list of (feature_idx, strength) tuples
-    strength > 0 = amplify, strength < 0 = suppress, strength = 0 = ablate
-    """
-    def hook(value, hook):
-        for feat_idx, strength in feature_indices_and_strengths:
-            if strength == 0:
-                # Full ablation: zero out this feature's contribution
-                feature_direction = sae.W_dec[feat_idx]
-                projection = (value @ feature_direction).unsqueeze(-1) * feature_direction
-                value = value - projection
-            else:
-                # Amplify/suppress by adding scaled decoder vector
-                value = value + strength * sae.W_dec[feat_idx]
-        return value
-    return hook
+Tried steering with these features. Typing features at +500: gibberish. At +50: switched to JavaScript, still no types. At +10: slightly different code, no types. **Zero type annotations at any strength.**
 
-def generate_with_steering(prompt, feature_overrides, max_tokens=300):
-    hook_fn = make_steering_hook(sae, feature_overrides)
-    with model.hooks(fwd_hooks=[("blocks.16.hook_resid_post", hook_fn)]):
-        output = model.generate(prompt, max_new_tokens=max_tokens, temperature=0.3)
-    return output
+### Round 2: Custom SAE on Mistral 7B (partial success)
 
-# Also generate baseline (no steering) for comparison
-baseline = model.generate(prompt, max_new_tokens=300, temperature=0.3)
+Trained a BatchTopK SAE on StarCoderData targeting the residual stream. Found feature 304: 1,499x specificity for typed code, actually produced type annotations when steered. But 52% dead features limited the feature space.
+
+### Round 3: Full pipeline on Ministral 8B (success)
+
+Built a proper experiments pipeline. Trained custom SAEs at layers 18 and 27. Used generation-based contrastive discovery. Found 30 verified features across 5 properties with visible, coherent steering effects. The pipeline runs end-to-end in ~2 hours: generation → evaluation → activation capture → SAE training → feature discovery → steering verification.
+
+### Round 4: Quantitative steering evaluation
+
+Ran HumanEval pass-rate evaluation with contrastive and SAE steering at alpha = +/-3. Key finding: **all 22 steering conditions reduced pass rate below baseline.** Steering shifts code style without improving correctness. This is mechanistically interesting — the model's "code style" and "code correctness" representations are entangled at the feature level, and amplifying style features comes at a correctness cost.
+
+---
+
+## Web UI
+
+The frontend provides three views:
+
+- **Code tab**: Side-by-side diff of baseline vs steered generation. Alpha sweep scrubber to compare steering intensities from -2 to +3.
+- **Analysis tab**: Token-level heatmap of feature activations. Click any token to see its SAE decomposition (top 10 active features) and layer-by-layer attribution (attention vs MLP contribution at each layer).
+- **Dashboard tab**: Multi-feature activation timeline, activation matrix heatmap, and feature distribution histograms.
+
+---
+
+## Running It
+
+### Prerequisites
+- GPU VM with 2x H100 (or equivalent with 48+ GB VRAM)
+- Python 3.10+, Node.js 18+
+- SAE checkpoints on the VM (`~/8b_saes/layer_18_sae_checkpoint.pt`)
+
+### Backend (on GPU VM)
+```bash
+cd backend
+SAE_CHECKPOINT=~/8b_saes/layer_18_sae_checkpoint.pt \
+  uvicorn backend.server:app --host 0.0.0.0 --port 8000
+```
+
+### Frontend (local)
+```bash
+npm install
+npm run dev   # → localhost:3000
+```
+
+### SSH tunnel (connects local frontend to VM backend)
+```bash
+ssh -L 8000:localhost:8000 -i ~/.ssh/id_rsa azureuser@20.38.0.252
+```
+
+### Running the discovery pipeline
+```bash
+# On the GPU VM
+python scripts/run_discovery.py   # ~36 min, produces results/demo_features.json
 ```
 
 ---
 
-## ~~Phase 3: The "What Changed?" Layer~~ (CUT — out of scope)
+## Project Structure
 
-~~This phase proposed using Mistral API to auto-explain diffs between baseline and steered outputs. Removed to keep scope tight.~~
+```
+.
+├── backend/                FastAPI server (steering + analysis endpoints)
+│   └── server.py           Ministral 8B + custom TopK SAE, PyTorch hooks
+├── src/                    Next.js frontend
+│   ├── app/page.tsx        Main UI (feature sliders, diff view, analysis tabs)
+│   └── components/         Visualization components (heatmaps, charts, timelines)
+├── experiments/            ML pipeline (generation → evaluation → SAE → steering)
+│   ├── sae/                Custom SAE architecture (TopK, BatchTopK)
+│   ├── steering/           Steering hook implementation
+│   ├── generation/         vLLM runner, activation capture
+│   ├── evaluation/         Sandboxed code execution, pass/fail judging
+│   └── scripts/            Pipeline orchestration (00-05)
+├── scripts/                Feature discovery (run_discovery.py, demo_diff.py)
+├── results/                Experimental outputs
+│   ├── demo_features.json  30 verified features with scores and strengths
+│   ├── ranking.json        Full Phase 2 ranking data
+│   ├── mistral-7b/         Mistral 7B generation + steering results
+│   └── ministral-8b/       Ministral 8B generation + steering results
+├── FEATURES_FOUND.md       Discovered features (30 verified, 5 properties)
+├── STEERING_ANALYSIS.md    Why the community SAE failed (root cause analysis)
+└── SAE_TRAINING_PLAN.md    Custom SAE training methodology
+```
 
 ---
 
-## The Risk: Single-Layer Limitation
+## Tech Stack
 
-**Mitigation:** If during feature discovery you find the layer 16 SAE is too sparse on code features, there's a fallback: use SAELens to train a small, quick SAE yourself on code-specific data (The Stack, or TheVault) targeting the same layer. SAELens can train a usable SAE on an A100 in 2–4 hours for a 7B model.
-
----
-
-## Updated Timeline
-
-| Time | Task |
+| Component | Technology |
 |---|---|
-| Hour 1 | Load Mistral 7B + Tyler's SAE, verify steering works end-to-end in notebook |
-| Hour 2–3 | Run feature discovery pipeline on 50+ code prompts, collect top firing features |
-| Hour 3–4 | Auto-label features using Mistral API, curate registry of ~15 code features |
-| Hour 4–5 | Build steering backend with baseline + steered side-by-side generation |
-| Hour 5–6 | Build control panel UI |
-| Hour 6–7 | Scripted demo prep, edge case testing |
-
----
-
-## Where to Start
-
-1. Verify the SAE loads: `pip install sae-lens transformer-lens mistralai`, then load `tylercosgrove/mistral-7b-sparse-autoencoder-layer16` and confirm `sae.encode()` works on a Mistral forward pass
-2. Get a Mistral API key from [console.mistral.ai](https://console.mistral.ai) — the free tier is sufficient for feature labeling
-3. Run the feature discovery pipeline on 20–30 code snippets to see what layer 16 actually captures before committing to the UI build
-
-The core pitch is clean: **open-weight Mistral for the mechanistic steering, Mistral API for the interpretability layer** — a full Mistral stack, two different but complementary roles.
-
+| Model | Ministral 8B Instruct (bfloat16, 2x H100 NVL) |
+| SAE | Custom BatchTopK (d_sae=16,384, k=64, trained on StarCoderData) |
+| SAE training | sae_lens + custom TopK implementation |
+| Steering | PyTorch `register_forward_hook()` on residual stream |
+| Backend | FastAPI (generate, analyze, feature registry endpoints) |
+| Frontend | Next.js 14, TypeScript, Tailwind CSS |
+| Evaluation | HumanEval + MBPP, sandboxed execution, 6 prompt variants |
+| Infrastructure | Azure VM, 2x NVIDIA H100 NVL (96 GB VRAM each) |
