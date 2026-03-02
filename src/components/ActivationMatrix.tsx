@@ -41,6 +41,13 @@ export default function ActivationMatrix({
 
   const formatToken = (t: string) => {
     return t
+      // GPT/BPE byte encoding
+      .replace(/\u0120/g, "\u00b7")   // Ġ → visible dot (space)
+      .replace(/\u010a/g, "\u21b5")   // Ċ → return symbol (newline)
+      .replace(/\u0109/g, "\u2192")   // ĉ → arrow (tab)
+      // SentencePiece
+      .replace(/\u2581/g, "\u00b7")
+      // Already-decoded whitespace
       .replace(/\n/g, "\u21b5")
       .replace(/\t/g, "\u2192")
       .replace(/ /g, "\u00b7");

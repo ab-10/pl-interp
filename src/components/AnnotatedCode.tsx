@@ -17,7 +17,13 @@ interface AnnotatedCodeProps {
 /** Decode sentencepiece tokenizer tokens back to readable text. */
 function decodeToken(token: string): string {
   let s = token;
-  s = s.replace(/▁/g, " ");
+  // GPT/BPE byte encoding: Ġ (U+0120) = space, Ċ (U+010A) = newline, ĉ (U+0109) = tab
+  s = s.replace(/\u0120/g, " ");
+  s = s.replace(/\u010a/g, "\n");
+  s = s.replace(/\u0109/g, "\t");
+  // SentencePiece: ▁ (U+2581) = space prefix
+  s = s.replace(/\u2581/g, " ");
+  // Byte tokens: <0x0A> = \n, etc.
   s = s.replace(/<0x([0-9A-Fa-f]{2})>/g, (_, hex) =>
     String.fromCharCode(parseInt(hex, 16)),
   );

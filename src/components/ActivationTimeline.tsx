@@ -36,7 +36,9 @@ export default function ActivationTimeline({
   const data = tokens.map((tok, i) => {
     const point: Record<string, number | string> = {
       position: i,
-      token: tok.token.replace(/\n/g, "\u21b5").replace(/ /g, "\u00b7"),
+      token: tok.token
+        .replace(/\u0120/g, "\u00b7").replace(/\u010a/g, "\u21b5").replace(/\u0109/g, "\u2192")
+        .replace(/\u2581/g, "\u00b7").replace(/\n/g, "\u21b5").replace(/ /g, "\u00b7"),
     };
     for (const key of featureKeys) {
       point[`f_${key}`] = tok.activations[key] ?? 0;

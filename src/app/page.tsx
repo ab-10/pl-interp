@@ -58,8 +58,8 @@ function extractCode(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) return "";
 
-  // Strategy 1: markdown code blocks
-  const blockPattern = /```(?:python)?\s*\n(.*?)```/gs;
+  // Strategy 1: markdown code blocks ([\s\S] instead of dotall flag)
+  const blockPattern = /```(?:python)?\s*\n([\s\S]*?)```/g;
   const blocks: string[] = [];
   let m;
   while ((m = blockPattern.exec(trimmed)) !== null) {
@@ -68,7 +68,7 @@ function extractCode(text: string): string {
   if (blocks.length > 0) return blocks[0];
 
   // Strategy 2: bare function def
-  const funcMatch = trimmed.match(/^(def \w+.*)/ms);
+  const funcMatch = trimmed.match(/^(def \w+[\s\S]*)/m);
   if (funcMatch) return funcMatch[1].trim();
 
   // Strategy 3: full text fallback
